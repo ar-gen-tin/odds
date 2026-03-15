@@ -4,7 +4,6 @@ import Combine
 struct PanelView: View {
     @EnvironmentObject var store: MarketStore
     @EnvironmentObject var settings: SettingsStore
-    @EnvironmentObject var watchlist: WatchlistStore
     @State private var showSettings = false
     @State private var showSearch = false
     @State private var searchQuery = ""
@@ -14,30 +13,18 @@ struct PanelView: View {
     @State private var activeTab: MarketTab = .all
     @State private var expandedMarketId: String?
 
-    private var lang: AppLanguage { settings.language }
-
     // MARK: - Filtered Data
 
     private var displayedMarkets: [Market] {
         let markets: [Market] = {
             switch activeTab {
-            case .all:
-                return store.watchlist + store.trending
-            case .trending:
-                return store.trending
-            case .politics:
-                return (store.watchlist + store.trending).filter {
-                    $0.category.uppercased().contains("POLITIC")
-                }
-            case .crypto:
-                return (store.watchlist + store.trending).filter {
-                    $0.category.uppercased().contains("CRYPTO")
-                }
-            case .watch:
-                return store.watchlist
+            case .all: return store.watchlist + store.trending
+            case .trending: return store.trending
+            case .politics: return (store.watchlist + store.trending).filter { $0.category.uppercased().contains("POLITIC") }
+            case .crypto: return (store.watchlist + store.trending).filter { $0.category.uppercased().contains("CRYPTO") }
+            case .watch: return store.watchlist
             }
         }()
-
         guard !searchQuery.isEmpty else { return markets }
         return markets.filter {
             $0.question.localizedCaseInsensitiveContains(searchQuery) ||
@@ -45,9 +32,7 @@ struct PanelView: View {
         }
     }
 
-    private var totalResults: Int {
-        displayedMarkets.count + apiResults.count
-    }
+    private var totalResults: Int { displayedMarkets.count + apiResults.count }
 
     // MARK: - Body
 
@@ -57,11 +42,6 @@ struct PanelView: View {
                 onSettingsTap: {
                     showSettings.toggle()
                     if showSettings { showSearch = false; searchQuery = "" }
-                },
-                onSearchTap: {
-                    showSearch.toggle()
-                    if !showSearch { searchQuery = "" }
-                    showSettings = false
                 },
                 isSettingsActive: showSettings
             )
@@ -75,9 +55,7 @@ struct PanelView: View {
                     apiResults: $apiResults,
                     isSearchingAPI: $isSearchingAPI
                 )
-
                 ColumnHeaderView()
-
                 if !searchQuery.isEmpty && totalResults == 0 && !isSearchingAPI {
                     noResultsView
                 } else {
@@ -85,9 +63,7 @@ struct PanelView: View {
                 }
             } else {
                 TabBarView(activeTab: $activeTab)
-
                 ColumnHeaderView()
-
                 marketListView
             }
 
@@ -111,63 +87,82 @@ struct PanelView: View {
                 isSearchingAPI = false
             }
         }
-        // Keyboard shortcuts
         .onExitCommand {
             if showSearch {
-                searchQuery = ""
-                apiResults = []
-                showSearch = false
+                searchQuery = ""; apiResults = []; showSearch = false
             } else if showSettings {
                 showSettings = false
             }
         }
+        .background {
+            // ⌘Q to quit
+            Button("") { NSApplication.shared.terminate(nil) }
+                .keyboardShortcut("q", modifiers: .command)
+                .frame(width: 0, height: 0)
+                .opacity(0)
+        }
     }
 
-    // MARK: - Market List (tabbed)
+    // MARK: - Market List
 
     private var marketListView: some View {
         ScrollView(.vertical, showsIndicators: false) {
             LazyVStack(spacing: 0) {
-                ForEach(Array(displayedMarkets.enumerated()), id: \.element.id) { idx, market in
-                    VStack(spacing: 0) {
-                        MarketRowView(
-                            market: market,
-                            index: idx,
-                            isWatchlist: watchlist.contains(market.id),
-                            isAlternate: idx % 2 == 1,
-                            isExpanded: expandedMarketId == market.id,
-                            onTap: {
-                                withAnimation(.easeInOut(duration: 0.15)) {
-                                    expandedMarketId = expandedMarketId == market.id ? nil : market.id
-                                }
-                            },
-                            onRemove: { store.removeFromWatchlist(id: market.id) }
-                        )
-
-                        if expandedMarketId == market.id {
-                            ExpandedAreaView(
-                                market: market,
-                                isInWatchlist: watchlist.contains(market.id),
-                                onOpenPoly: {
-                                    if let url = market.polymarketURL {
-                                        NSWorkspace.shared.open(url)
-                                    }
-                                },
-                                onWatchlist: {
-                                    if watchlist.contains(market.id) {
-                                        watchlist.remove(market.id)
-                                        store.removeFromWatchlist(id: market.id)
-                                    } else {
-                                        watchlist.add(market.id)
-                                    }
-                                }
-                            )
-                        }
+                if activeTab == .all {
+                    if !store.watchlist.isEmpty {
+                        SectionDividerView(title: "WATCHLIST")
+                        marketRows(store.watchlist, startIndex: 0)
                     }
+                    if !store.trending.isEmpty {
+                        SectionDividerView(title: "TRENDING")
+                        marketRows(store.trending, startIndex: store.watchlist.count)
+                    }
+                } else {
+                    marketRows(displayedMarkets, startIndex: 0)
                 }
 
                 if displayedMarkets.isEmpty {
                     emptyTabView
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func marketRows(_ markets: [Market], startIndex: Int) -> some View {
+        ForEach(Array(markets.enumerated()), id: \.element.id) { idx, market in
+            VStack(spacing: 0) {
+                MarketRowView(
+                    market: market,
+                    index: startIndex + idx,
+                    isWatchlist: store.isInWatchlist(market.id),
+                    isAlternate: idx % 2 == 1,
+                    isExpanded: expandedMarketId == market.id,
+                    onTap: {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            expandedMarketId = expandedMarketId == market.id ? nil : market.id
+                        }
+                    },
+                    onRemove: { store.removeFromWatchlist(id: market.id) }
+                )
+
+                if expandedMarketId == market.id {
+                    ExpandedAreaView(
+                        market: market,
+                        isInWatchlist: store.isInWatchlist(market.id),
+                        onOpenPoly: {
+                            if let url = market.polymarketURL {
+                                NSWorkspace.shared.open(url)
+                            }
+                        },
+                        onWatchlist: {
+                            if store.isInWatchlist(market.id) {
+                                store.removeFromWatchlist(id: market.id)
+                            } else {
+                                // Re-add not supported from expanded area
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -178,40 +173,28 @@ struct PanelView: View {
     private var searchResultsView: some View {
         ScrollView(.vertical, showsIndicators: false) {
             LazyVStack(spacing: 0) {
-                // Local filtered results
                 ForEach(Array(displayedMarkets.enumerated()), id: \.element.id) { idx, market in
-                    MarketRowView(
-                        market: market,
-                        index: idx,
-                        isAlternate: idx % 2 == 1
-                    )
+                    MarketRowView(market: market, index: idx, isAlternate: idx % 2 == 1)
                 }
 
-                // API results
                 if !apiResults.isEmpty {
                     SectionDividerView(title: "POLYMARKET")
                     ForEach(apiResults) { result in
                         SearchResultRowView(
                             result: result,
-                            isInWatchlist: watchlist.contains(result.id),
-                            onAdd: {
-                                watchlist.add(result.id)
-                                store.addToWatchlistFromSearch(result)
-                            }
+                            isInWatchlist: store.isInWatchlist(result.id),
+                            onAdd: { store.addToWatchlist(result) }
                         )
                     }
                 }
 
-                // Loading
                 if isSearchingAPI && apiResults.isEmpty {
-                    HStack(spacing: 8) {
-                        Text("SEARCHING...")
-                            .font(OddsFonts.tag)
-                            .foregroundColor(OddsTheme.text3)
-                            .tracking(1.2)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 20)
+                    Text("SEARCHING...")
+                        .font(OddsFonts.tag)
+                        .foregroundColor(OddsTheme.text3)
+                        .tracking(1.2)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 20)
                 }
             }
         }
@@ -222,29 +205,21 @@ struct PanelView: View {
     private var noResultsView: some View {
         VStack {
             Spacer()
-            VStack(spacing: 8) {
-                Text("NO_RESULTS")
-                    .font(OddsFonts.settingsHeader)
-                    .foregroundColor(OddsTheme.text3)
-                    .tracking(1.2)
-                Text("try a different query")
-                    .font(OddsFonts.footerText)
-                    .foregroundColor(OddsTheme.text3.opacity(0.6))
-            }
+            Text("NO_RESULTS")
+                .font(OddsFonts.settingsHeader)
+                .foregroundColor(OddsTheme.text3)
+                .tracking(1.2)
             Spacer()
         }
     }
 
     private var emptyTabView: some View {
-        HStack {
-            Spacer()
-            Text("END_OF_LIST")
-                .font(OddsFonts.tag)
-                .foregroundColor(OddsTheme.text3)
-                .tracking(1.2)
-            Spacer()
-        }
-        .padding(.vertical, 40)
+        Text("END_OF_LIST")
+            .font(OddsFonts.tag)
+            .foregroundColor(OddsTheme.text3)
+            .tracking(1.2)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
     }
 
     // MARK: - API Search
@@ -253,14 +228,10 @@ struct PanelView: View {
     private func performAPISearch(query: String) async {
         do {
             let results = try await PolymarketAPI.search(query: query)
-            if searchQuery == query {
-                apiResults = results
-            }
+            if searchQuery == query { apiResults = results }
         } catch {
             print("[odds] Search error: \(error)")
         }
-        if searchQuery == query {
-            isSearchingAPI = false
-        }
+        if searchQuery == query { isSearchingAPI = false }
     }
 }

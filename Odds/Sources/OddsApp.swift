@@ -4,7 +4,6 @@ import SwiftUI
 struct OddsApp: App {
     @StateObject private var marketStore = MarketStore()
     @StateObject private var settings = SettingsStore()
-    @StateObject private var watchlist = WatchlistStore()
 
     init() {
         OddsFonts.registerFonts()
@@ -23,7 +22,6 @@ struct OddsApp: App {
             }
             .environmentObject(marketStore)
             .environmentObject(settings)
-            .environmentObject(watchlist)
             .onAppear {
                 marketStore.bind(to: settings)
             }

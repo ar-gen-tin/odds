@@ -52,8 +52,15 @@ enum OddsFonts {
     static let footerText = Font.custom(family, size: 9)
     static let footerSmall = Font.custom(family, size: 8)
 
-    // Sparkline text — 10pt normal
+    // Sparkline text
     static let sparkline = Font.custom(family, size: 10)
+    static let sparklineSmall = Font.custom(family, size: 8)
+    static let sparklineExpanded = Font.custom(family, size: 9)
+
+    // Medium weight labels (status bar, buttons)
+    static let labelMedium = Font.custom(familyMedium, size: 10)
+    static let buttonLabel = Font.custom(familyMedium, size: 9)
+    static let buttonSmall = Font.custom(familyMedium, size: 11)
 
     // Settings
     static let settingsLabel = Font.custom(family, size: 10)

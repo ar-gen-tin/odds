@@ -52,7 +52,7 @@ struct SearchResultRowView: View {
             } label: {
                 if isInWatchlist {
                     Text("✓")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(OddsFonts.buttonSmall)
                         .foregroundColor(OddsTheme.text3)
                         .frame(width: 52, height: 26)
                         .overlay(
@@ -61,7 +61,7 @@ struct SearchResultRowView: View {
                         )
                 } else {
                     Text("+ Add")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(OddsFonts.buttonSmall)
                         .foregroundColor(OddsTheme.lime)
                         .frame(width: 52, height: 26)
                         .background(
@@ -76,8 +76,8 @@ struct SearchResultRowView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .frame(minHeight: 46)
+        .padding(.horizontal, OddsTheme.horizontalPadding)
+        .frame(height: OddsTheme.rowHeight)
         .background(isHovered ? OddsTheme.bgElevated : Color.clear)
         .onHover { isHovered = $0 }
         .onTapGesture {

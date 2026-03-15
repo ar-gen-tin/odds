@@ -23,7 +23,7 @@ struct OnboardingView: View {
                     .foregroundColor(OddsTheme.text3)
                     .tracking(0.6)
                 Text("odds")
-                    .font(Font.custom("IBM Plex Mono Medium", size: 10))
+                    .font(OddsFonts.labelMedium)
                     .foregroundColor(OddsTheme.text1)
                 Text("∷")
                     .font(OddsFonts.statusBar)
@@ -81,7 +81,7 @@ struct OnboardingView: View {
                                 .foregroundColor(OddsTheme.text3)
 
                             Text(bootSequence[idx].1)
-                                .font(Font.custom("IBM Plex Mono Medium", size: 10))
+                                .font(OddsFonts.labelMedium)
                                 .foregroundColor(statusColor(for: bootSequence[idx].1))
                         }
                     }

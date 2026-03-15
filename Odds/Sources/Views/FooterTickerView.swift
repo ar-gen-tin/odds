@@ -2,82 +2,55 @@ import SwiftUI
 
 struct FooterTickerView: View {
     @EnvironmentObject var store: MarketStore
-    @State private var offset: CGFloat = 0
+    @State private var cachedTicker: String = ""
+    @State private var textWidth: CGFloat = 400
 
     var body: some View {
-        GeometryReader { geo in
-            let tickerText = buildTickerContent()
-            HStack(spacing: 0) {
-                tickerRow(tickerText)
-                    .offset(x: offset)
-                tickerRow(tickerText)
-                    .offset(x: offset)
-            }
-            .onAppear {
-                startScrolling(containerWidth: geo.size.width)
+        GeometryReader { _ in
+            TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { timeline in
+                let speed: Double = 25
+                let halfWidth = max(textWidth / 2, 1)
+                let now = timeline.date.timeIntervalSinceReferenceDate
+                let offset = CGFloat(now.truncatingRemainder(dividingBy: halfWidth / speed) * speed)
+
+                Text(cachedTicker)
+                    .font(OddsFonts.footerText)
+                    .foregroundColor(OddsTheme.text2)
+                    .fixedSize()
+                    .offset(x: -offset)
+                    .background(
+                        GeometryReader { g in
+                            Color.clear.preference(key: TextWidthKey.self, value: g.size.width)
+                        }
+                    )
             }
         }
+        .onPreferenceChange(TextWidthKey.self) { textWidth = $0 }
         .frame(height: OddsTheme.footerHeight)
         .clipped()
         .background(OddsTheme.bgCard)
         .border(width: 1, edges: [.top], color: OddsTheme.border)
+        .onAppear { updateTicker() }
+        .onChange(of: store.lastUpdated) { updateTicker() }
     }
 
-    @ViewBuilder
-    private func tickerRow(_ items: [(String, Double, Double)]) -> some View {
-        HStack(spacing: 6) {
-            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                tickerItem(name: item.0, price: item.1, change: item.2)
-            }
-        }
-        .padding(.horizontal, OddsTheme.horizontalPadding)
+    private func updateTicker() {
+        let items = (store.watchlist + store.trending).prefix(6)
+        let text = items.map { market in
+            let name = String(market.question.prefix(12))
+            let price = String(format: "%.2f", market.yesPrice)
+            let arrow = market.oneDayChange >= 0 ? "▲" : "▼"
+            let sign = market.oneDayChange >= 0 ? "+" : "-"
+            let delta = String(format: "%@.%02d", sign, abs(Int((market.oneDayChange * 100).rounded())))
+            return "► \(name) \(price) \(arrow)\(delta)"
+        }.joined(separator: "  ")
+        cachedTicker = text + "     " + text + "     "
     }
+}
 
-    @ViewBuilder
-    private func tickerItem(name: String, price: Double, change: Double) -> some View {
-        HStack(spacing: 4) {
-            Text("►")
-                .font(OddsFonts.footerSmall)
-                .foregroundColor(OddsTheme.orange)
-                .opacity(0.6)
-
-            Text(name)
-                .font(OddsFonts.footerText)
-                .foregroundColor(OddsTheme.text3)
-
-            Text(String(format: "%.2f", price))
-                .font(OddsFonts.footerText)
-                .foregroundColor(OddsTheme.text2)
-
-            Text(formatTickerDelta(change))
-                .font(OddsFonts.footerSmall)
-                .foregroundColor(change >= 0 ? OddsTheme.lime : OddsTheme.orange)
-        }
-    }
-
-    private func formatTickerDelta(_ change: Double) -> String {
-        let arrow = change >= 0 ? "▲" : "▼"
-        let sign = change >= 0 ? "+" : ""
-        return "\(arrow)\(sign).\(String(format: "%02d", abs(Int((change * 100).rounded()))))"
-    }
-
-    private func buildTickerContent() -> [(String, Double, Double)] {
-        let allMarkets = store.watchlist + store.trending
-        return allMarkets.prefix(6).map { market in
-            let shortName = market.question
-                .replacingOccurrences(of: " Wins ", with: " ")
-                .replacingOccurrences(of: " > ", with: " ")
-                .components(separatedBy: " ")
-                .prefix(2)
-                .joined(separator: " ")
-            return (shortName, market.yesPrice, market.oneDayChange)
-        }
-    }
-
-    private func startScrolling(containerWidth: CGFloat) {
-        let contentWidth: CGFloat = 600 // approximate
-        withAnimation(.linear(duration: 20).repeatForever(autoreverses: false)) {
-            offset = -contentWidth
-        }
+private struct TextWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 400
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }

@@ -4,7 +4,6 @@ struct StatusBarView: View {
     @EnvironmentObject var store: MarketStore
     @EnvironmentObject var settings: SettingsStore
     var onSettingsTap: (() -> Void)?
-    var onSearchTap: (() -> Void)?
     var isSettingsActive: Bool = false
 
     var body: some View {
@@ -20,7 +19,7 @@ struct StatusBarView: View {
             } label: {
                 HStack(spacing: 6) {
                     Text("odds")
-                        .font(Font.custom("IBM Plex Mono Medium", size: 10))
+                        .font(OddsFonts.labelMedium)
                         .foregroundColor(OddsTheme.text1)
 
                     if isSettingsActive {
@@ -37,7 +36,7 @@ struct StatusBarView: View {
                             .frame(width: 5, height: 5)
 
                         Text("LIVE")
-                            .font(Font.custom("IBM Plex Mono Medium", size: 10))
+                            .font(OddsFonts.labelMedium)
                             .foregroundColor(OddsTheme.lime)
                             .tracking(0.6)
                     }

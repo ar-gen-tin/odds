@@ -10,18 +10,13 @@ struct ExpandedAreaView: View {
         VStack(alignment: .leading, spacing: 6) {
             // Wide text sparkline
             Text(wideSparkline(market.priceHistory))
-                .font(OddsFonts.sparkline)
+                .font(OddsFonts.sparklineExpanded)
                 .foregroundColor(OddsTheme.orange)
                 .opacity(0.85)
-                .tracking(0.5)
+                .tracking(-0.5)
 
-            // Stats row 1
-            Text("VOL \(formatVolume(market.volume24h))  |  24H \(formatDelta(market.oneDayChange))  |  OPEN \(String(format: "%.2f", max(market.yesPrice - market.oneDayChange, 0)))  |  HIGH \(String(format: "%.2f", min(market.yesPrice + 0.06, 1.0)))")
-                .font(OddsFonts.footerText)
-                .foregroundColor(OddsTheme.text3)
-
-            // Stats row 2
-            Text("LOW \(String(format: "%.2f", max(market.yesPrice - 0.07, 0)))  |  OUTCOMES: YES/NO  |  LIQ \(formatVolume(market.volume24h * 0.37))")
+            // Stats — only real data
+            Text("VOL \(formatVolume(market.volume24h))  |  24H \(formatDelta(market.oneDayChange))  |  PRICE \(String(format: "%.2f", market.yesPrice))  |  OUTCOMES: YES/NO")
                 .font(OddsFonts.footerText)
                 .foregroundColor(OddsTheme.text3)
 
@@ -99,7 +94,7 @@ struct ActionButton: View {
     var body: some View {
         Button(action: action) {
             Text(label)
-                .font(Font.custom("IBM Plex Mono Medium", size: 9))
+                .font(OddsFonts.buttonLabel)
                 .foregroundColor(isPrimary ? OddsTheme.orange : OddsTheme.text2)
                 .tracking(0.8)
                 .padding(.horizontal, 10)

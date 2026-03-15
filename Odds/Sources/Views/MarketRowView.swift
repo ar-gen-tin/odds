@@ -40,30 +40,8 @@ struct MarketRowView: View {
                     .frame(width: 28, alignment: .leading)
 
                 // MARKET column (flex) — name + dot leader
-                HStack(spacing: 0) {
-                    Text(market.question)
-                        .font(OddsFonts.marketName)
-                        .foregroundColor(OddsTheme.text1)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .help(market.question)
-
-                    // Dot leader
-                    GeometryReader { geo in
-                        Path { path in
-                            let y = geo.size.height / 2
-                            var x: CGFloat = 4
-                            while x < geo.size.width - 4 {
-                                path.move(to: CGPoint(x: x, y: y))
-                                path.addLine(to: CGPoint(x: x + 2, y: y))
-                                x += 6
-                            }
-                        }
-                        .stroke(OddsTheme.text3, lineWidth: 0.5)
-                    }
-                    .frame(height: OddsTheme.rowHeight)
-                }
-                .frame(maxWidth: .infinity)
+                rowNameWithLeader
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 // PROB column (50px)
                 Text(formatProb(market.yesPrice))
@@ -79,10 +57,10 @@ struct MarketRowView: View {
 
                 // TREND column (56px) — text-based sparkline
                 Text(MarketRowView.textSparkline(market.priceHistory))
-                    .font(OddsFonts.sparkline)
+                    .font(OddsFonts.sparklineSmall)
                     .foregroundColor(OddsTheme.orange)
                     .opacity(0.7)
-                    .tracking(-1)
+                    .tracking(-0.5)
                     .frame(width: 56, alignment: .trailing)
             }
             .padding(.horizontal, OddsTheme.horizontalPadding)
@@ -123,6 +101,35 @@ struct MarketRowView: View {
         }
     }
 
+    // MARK: - Name + Dot Leader
+
+    private var rowNameWithLeader: some View {
+        ZStack(alignment: .leading) {
+            // Layer 1: dot-leader across entire width
+            GeometryReader { geo in
+                Path { path in
+                    let y = geo.size.height / 2
+                    var x: CGFloat = 0
+                    while x < geo.size.width {
+                        path.move(to: CGPoint(x: x, y: y))
+                        path.addLine(to: CGPoint(x: x + 1.5, y: y))
+                        x += 5
+                    }
+                }
+                .stroke(OddsTheme.text3, lineWidth: 0.5)
+            }
+
+            // Layer 2: name text with background to mask dots behind it
+            Text(market.question)
+                .font(OddsFonts.marketName)
+                .foregroundColor(OddsTheme.text1)
+                .lineLimit(1)
+                .help(market.question)
+                .padding(.trailing, 4)
+                .background(rowBackground)
+        }
+    }
+
     private var rowBackground: Color {
         if isHovered { return OddsTheme.bgElevated }
         if isAlternate { return OddsTheme.bgElevated }
@@ -143,28 +150,31 @@ struct MarketRowView: View {
 
     private func formatDelta(_ change: Double) -> String {
         if abs(change) < 0.0001 { return ".00" }
-        let sign = change > 0 ? "+" : ""
+        let sign = change > 0 ? "+" : "-"
         return String(format: "%@.%02d", sign, abs(Int((change * 100).rounded())))
     }
 
-    /// Convert price history to Unicode block characters (▁▂▃▄▅▆▇█)
+    /// Convert price history to Unicode block characters (▁▂▃▅▆▇█)
     static func textSparkline(_ data: [Double]) -> String {
         guard !data.isEmpty else { return "" }
-        let blocks: [Character] = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+        let blocks: [Character] = ["▁", "▂", "▃", "▅", "▆", "▇", "█"]
         let minVal = data.min() ?? 0
         let maxVal = data.max() ?? 1
         let range = maxVal - minVal
 
-        return String(data.map { value in
+        // Limit to ~8 characters max to fit in 56px
+        let sampled: [Double]
+        if data.count > 8 {
+            sampled = stride(from: 0, to: data.count, by: max(1, data.count / 8)).map { data[$0] }
+        } else {
+            sampled = data
+        }
+
+        return String(sampled.map { value in
             if range == 0 { return blocks[3] }
             let normalized = (value - minVal) / range
             let idx = min(Int(normalized * Double(blocks.count - 1)), blocks.count - 1)
             return blocks[idx]
         })
     }
-}
-
-// Make the static sparkline function accessible from other views
-func textSparkline(_ data: [Double]) -> String {
-    MarketRowView.textSparkline(data)
 }
