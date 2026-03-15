@@ -6,7 +6,6 @@ struct MultiOutcomeRowView: View {
     @State private var isHovered = false
 
     var body: some View {
-        // P2 Fix: Tighter spacing for density
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(market.question)
@@ -26,34 +25,32 @@ struct MultiOutcomeRowView: View {
                 ForEach(Array(market.outcomes.enumerated()), id: \.element.id) { index, outcome in
                     HStack(spacing: 8) {
                         Text(outcome.name)
-                            .font(.system(size: 11))
+                            .font(OddsFonts.marketName)
                             .foregroundColor(OddsTheme.text2)
                             .frame(width: 70, alignment: .trailing)
 
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 3)
+                                Rectangle()
                                     .fill(Color.white.opacity(0.02))
-                                    // P2 Fix: Shorter bars
                                     .frame(height: 14)
 
-                                RoundedRectangle(cornerRadius: 3)
+                                Rectangle()
                                     .fill(barColor(for: index))
                                     .frame(width: max(geo.size.width * outcome.price, 4), height: 14)
                             }
                         }
                         .frame(height: 14)
 
-                        // P1 Fix: Price label outside bar (avoids overflow on low probabilities)
                         Text(settings.formatPrice(outcome.price))
-                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .font(OddsFonts.change)
                             .foregroundColor(OddsTheme.text2)
                             .frame(width: 36, alignment: .trailing)
                     }
                 }
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, OddsTheme.horizontalPadding)
         .padding(.vertical, 8)
         .background(isHovered ? OddsTheme.bgElevated : OddsTheme.bgCard)
         .onHover { isHovered = $0 }
