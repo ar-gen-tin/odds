@@ -2,110 +2,169 @@ import SwiftUI
 
 struct MarketRowView: View {
     let market: Market
+    let index: Int
     let isWatchlist: Bool
+    let isAlternate: Bool
+    var isExpanded: Bool = false
+    var onTap: (() -> Void)?
     var onRemove: (() -> Void)?
 
     @EnvironmentObject var settings: SettingsStore
     @State private var isHovered = false
 
-    init(market: Market, isWatchlist: Bool = false, onRemove: (() -> Void)? = nil) {
+    init(
+        market: Market,
+        index: Int,
+        isWatchlist: Bool = false,
+        isAlternate: Bool = false,
+        isExpanded: Bool = false,
+        onTap: (() -> Void)? = nil,
+        onRemove: (() -> Void)? = nil
+    ) {
         self.market = market
+        self.index = index
         self.isWatchlist = isWatchlist
+        self.isAlternate = isAlternate
+        self.isExpanded = isExpanded
+        self.onTap = onTap
         self.onRemove = onRemove
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(market.question)
-                    .font(OddsFonts.marketName)
-                    .foregroundColor(OddsTheme.text1)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .help(market.question)
-
-                Text(market.category)
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                // IDX column (28px)
+                Text(String(format: "%02d", index))
                     .font(OddsFonts.tag)
                     .foregroundColor(OddsTheme.text3)
-                    .tracking(1)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(width: 28, alignment: .leading)
 
-            if settings.showSparklines {
-                SparklineView(data: market.priceHistory, trend: market.trend)
-                    .frame(width: 56, height: 20)
-            } else {
-                Spacer().frame(width: 56)
-            }
+                // MARKET column (flex) — name + dot leader
+                HStack(spacing: 0) {
+                    Text(market.question)
+                        .font(OddsFonts.marketName)
+                        .foregroundColor(OddsTheme.text1)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .help(market.question)
 
-            Text(settings.formatPrice(market.yesPrice))
-                .font(OddsFonts.price)
-                .foregroundColor(OddsTheme.text1)
-                .frame(width: 56, alignment: .trailing)
-
-            Text(market.changeText)
-                .font(OddsFonts.change)
-                .foregroundColor(trendColor)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(trendBgColor)
-                )
-                .frame(width: 52, alignment: .trailing)
-        }
-        .padding(.horizontal, 16)
-        .frame(minHeight: 46)
-        .background(isHovered ? OddsTheme.bgElevated : Color.clear)
-        .onHover { isHovered = $0 }
-        .onTapGesture {
-            if let url = market.polymarketURL {
-                NSWorkspace.shared.open(url)
-            }
-        }
-        .contextMenu {
-            Button {
-                if let url = market.polymarketURL {
-                    NSWorkspace.shared.open(url)
+                    // Dot leader
+                    GeometryReader { geo in
+                        Path { path in
+                            let y = geo.size.height / 2
+                            var x: CGFloat = 4
+                            while x < geo.size.width - 4 {
+                                path.move(to: CGPoint(x: x, y: y))
+                                path.addLine(to: CGPoint(x: x + 2, y: y))
+                                x += 6
+                            }
+                        }
+                        .stroke(OddsTheme.text3, lineWidth: 0.5)
+                    }
+                    .frame(height: OddsTheme.rowHeight)
                 }
-            } label: {
-                Label("Open on Polymarket", systemImage: "arrow.up.right")
+                .frame(maxWidth: .infinity)
+
+                // PROB column (50px)
+                Text(formatProb(market.yesPrice))
+                    .font(OddsFonts.price)
+                    .foregroundColor(OddsTheme.text1)
+                    .frame(width: 50, alignment: .trailing)
+
+                // Δ column (36px)
+                Text(formatDelta(market.oneDayChange))
+                    .font(OddsFonts.change)
+                    .foregroundColor(trendColor)
+                    .frame(width: 36, alignment: .trailing)
+
+                // TREND column (56px) — text-based sparkline
+                Text(MarketRowView.textSparkline(market.priceHistory))
+                    .font(OddsFonts.sparkline)
+                    .foregroundColor(OddsTheme.orange)
+                    .opacity(0.7)
+                    .tracking(-1)
+                    .frame(width: 56, alignment: .trailing)
             }
-
-            Button {
-                if let url = market.polymarketURL {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(url.absoluteString, forType: .string)
-                }
-            } label: {
-                Label("Copy Link", systemImage: "doc.on.doc")
+            .padding(.horizontal, OddsTheme.horizontalPadding)
+            .frame(height: OddsTheme.rowHeight)
+            .background(rowBackground)
+            .border(width: 1, edges: [.bottom], color: OddsTheme.border)
+            .onHover { isHovered = $0 }
+            .onTapGesture {
+                onTap?()
             }
-
-            if isWatchlist {
-                Divider()
-
-                Button(role: .destructive) {
-                    onRemove?()
+            .contextMenu {
+                Button {
+                    if let url = market.polymarketURL {
+                        NSWorkspace.shared.open(url)
+                    }
                 } label: {
-                    Label("Remove from Watchlist", systemImage: "xmark")
+                    Label("Open on Polymarket", systemImage: "arrow.up.right")
+                }
+
+                Button {
+                    if let url = market.polymarketURL {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(url.absoluteString, forType: .string)
+                    }
+                } label: {
+                    Label("Copy Link", systemImage: "doc.on.doc")
+                }
+
+                if isWatchlist {
+                    Divider()
+                    Button(role: .destructive) {
+                        onRemove?()
+                    } label: {
+                        Label("Remove from Watchlist", systemImage: "xmark")
+                    }
                 }
             }
         }
+    }
+
+    private var rowBackground: Color {
+        if isHovered { return OddsTheme.bgElevated }
+        if isAlternate { return OddsTheme.bgElevated }
+        return Color.clear
     }
 
     private var trendColor: Color {
         switch market.trend {
         case .up: return OddsTheme.lime
-        case .down: return OddsTheme.downRed
+        case .down: return OddsTheme.orange
         case .flat: return OddsTheme.text3
         }
     }
 
-    private var trendBgColor: Color {
-        switch market.trend {
-        case .up: return OddsTheme.limeDim
-        case .down: return OddsTheme.redDim
-        case .flat: return Color.white.opacity(0.03)
-        }
+    private func formatProb(_ price: Double) -> String {
+        String(format: ".%02d", Int((price * 100).rounded()))
     }
+
+    private func formatDelta(_ change: Double) -> String {
+        if abs(change) < 0.0001 { return ".00" }
+        let sign = change > 0 ? "+" : ""
+        return String(format: "%@.%02d", sign, abs(Int((change * 100).rounded())))
+    }
+
+    /// Convert price history to Unicode block characters (▁▂▃▄▅▆▇█)
+    static func textSparkline(_ data: [Double]) -> String {
+        guard !data.isEmpty else { return "" }
+        let blocks: [Character] = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+        let minVal = data.min() ?? 0
+        let maxVal = data.max() ?? 1
+        let range = maxVal - minVal
+
+        return String(data.map { value in
+            if range == 0 { return blocks[3] }
+            let normalized = (value - minVal) / range
+            let idx = min(Int(normalized * Double(blocks.count - 1)), blocks.count - 1)
+            return blocks[idx]
+        })
+    }
+}
+
+// Make the static sparkline function accessible from other views
+func textSparkline(_ data: [Double]) -> String {
+    MarketRowView.textSparkline(data)
 }
