@@ -119,14 +119,14 @@ struct MarketRowView: View {
                 .stroke(OddsTheme.text3, lineWidth: 0.5)
             }
 
-            // Layer 2: name text with background to mask dots behind it
+            // Layer 2: name text with opaque background to mask dots behind it
             Text(market.question)
                 .font(OddsFonts.marketName)
                 .foregroundColor(OddsTheme.text1)
                 .lineLimit(1)
                 .help(market.question)
                 .padding(.trailing, 4)
-                .background(rowBackground)
+                .background(isAlternate || isHovered ? OddsTheme.bgElevated : OddsTheme.bg)
         }
     }
 

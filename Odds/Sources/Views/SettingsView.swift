@@ -5,8 +5,6 @@ struct SettingsView: View {
     @EnvironmentObject var store: MarketStore
     @Binding var isPresented: Bool
 
-    private var lang: AppLanguage { settings.language }
-
     var body: some View {
         VStack(spacing: 0) {
             // Back navigation

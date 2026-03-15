@@ -39,10 +39,5 @@ struct SearchBarView: View {
         .frame(height: OddsTheme.statusBarHeight)
         .background(OddsTheme.bgCard)
         .border(width: 1, edges: [.bottom], color: OddsTheme.border)
-        .onExitCommand {
-            query = ""
-            apiResults = []
-            isActive = false
-        }
     }
 }

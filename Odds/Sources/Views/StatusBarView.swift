@@ -4,6 +4,7 @@ struct StatusBarView: View {
     @EnvironmentObject var store: MarketStore
     @EnvironmentObject var settings: SettingsStore
     var onSettingsTap: (() -> Void)?
+    var onSearchTap: (() -> Void)?
     var isSettingsActive: Bool = false
 
     var body: some View {
@@ -57,6 +58,16 @@ struct StatusBarView: View {
             Text("\(store.marketCount)")
                 .font(OddsFonts.statusBar)
                 .foregroundColor(OddsTheme.text2)
+
+            // Search trigger
+            Button {
+                onSearchTap?()
+            } label: {
+                Text("⌕")
+                    .font(OddsFonts.statusBar)
+                    .foregroundColor(OddsTheme.text3)
+            }
+            .buttonStyle(.plain)
 
             Text("↻")
                 .font(OddsFonts.statusBar)

@@ -42,7 +42,7 @@ struct ExpandedAreaView: View {
     }
 
     private func formatDelta(_ change: Double) -> String {
-        let sign = change >= 0 ? "+" : ""
+        let sign = change >= 0 ? "+" : "-"
         return String(format: "%@.%02d", sign, abs(Int((change * 100).rounded())))
     }
 

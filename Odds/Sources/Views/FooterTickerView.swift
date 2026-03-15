@@ -6,7 +6,7 @@ struct FooterTickerView: View {
     @State private var textWidth: CGFloat = 400
 
     var body: some View {
-        GeometryReader { _ in
+        GeometryReader { geo in
             TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { timeline in
                 let speed: Double = 25
                 let halfWidth = max(textWidth / 2, 1)
@@ -17,6 +17,7 @@ struct FooterTickerView: View {
                     .font(OddsFonts.footerText)
                     .foregroundColor(OddsTheme.text2)
                     .fixedSize()
+                    .frame(height: geo.size.height)
                     .offset(x: -offset)
                     .background(
                         GeometryReader { g in

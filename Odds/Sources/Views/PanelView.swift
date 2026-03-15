@@ -43,6 +43,11 @@ struct PanelView: View {
                     showSettings.toggle()
                     if showSettings { showSearch = false; searchQuery = "" }
                 },
+                onSearchTap: {
+                    showSearch.toggle()
+                    if !showSearch { searchQuery = ""; apiResults = [] }
+                    showSettings = false
+                },
                 isSettingsActive: showSettings
             )
 
