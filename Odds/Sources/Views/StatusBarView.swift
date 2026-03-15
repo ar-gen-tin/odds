@@ -3,6 +3,9 @@ import SwiftUI
 struct StatusBarView: View {
     @EnvironmentObject var store: MarketStore
     @EnvironmentObject var settings: SettingsStore
+    var onSettingsTap: (() -> Void)?
+    var onSearchTap: (() -> Void)?
+    var isSettingsActive: Bool = false
 
     var body: some View {
         HStack(spacing: 6) {
@@ -11,18 +14,36 @@ struct StatusBarView: View {
                 .foregroundColor(OddsTheme.text3)
                 .tracking(0.6)
 
-            Text("odds")
-                .font(Font.custom("IBM Plex Mono Medium", size: 10))
-                .foregroundColor(OddsTheme.text1)
+            // Tapping "odds" toggles settings
+            Button {
+                onSettingsTap?()
+            } label: {
+                HStack(spacing: 6) {
+                    Text("odds")
+                        .font(Font.custom("IBM Plex Mono Medium", size: 10))
+                        .foregroundColor(OddsTheme.text1)
 
-            Circle()
-                .fill(OddsTheme.lime)
-                .frame(width: 5, height: 5)
+                    if isSettingsActive {
+                        Text("∷")
+                            .font(OddsFonts.statusBar)
+                            .foregroundColor(OddsTheme.text3)
+                        Text("SETTINGS")
+                            .font(OddsFonts.statusBar)
+                            .foregroundColor(OddsTheme.orange)
+                            .tracking(0.6)
+                    } else {
+                        Circle()
+                            .fill(OddsTheme.lime)
+                            .frame(width: 5, height: 5)
 
-            Text("LIVE")
-                .font(Font.custom("IBM Plex Mono Medium", size: 10))
-                .foregroundColor(OddsTheme.lime)
-                .tracking(0.6)
+                        Text("LIVE")
+                            .font(Font.custom("IBM Plex Mono Medium", size: 10))
+                            .foregroundColor(OddsTheme.lime)
+                            .tracking(0.6)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
 
             Text("|")
                 .font(OddsFonts.statusBar)

@@ -12,13 +12,21 @@ struct OddsApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            PanelView()
-                .environmentObject(marketStore)
-                .environmentObject(settings)
-                .environmentObject(watchlist)
-                .onAppear {
-                    marketStore.bind(to: settings)
+            Group {
+                if settings.hasCompletedOnboarding {
+                    PanelView()
+                } else {
+                    OnboardingView {
+                        settings.hasCompletedOnboarding = true
+                    }
                 }
+            }
+            .environmentObject(marketStore)
+            .environmentObject(settings)
+            .environmentObject(watchlist)
+            .onAppear {
+                marketStore.bind(to: settings)
+            }
         } label: {
             Image(systemName: "dice")
                 .symbolRenderingMode(.hierarchical)
