@@ -7,21 +7,29 @@ struct PanelView: View {
     @State private var showSettings = false
     @State private var showSearch = false
     @State private var searchQuery = ""
-    @State private var apiResults: [SearchResult] = []
+    @State private var apiResults: [Market] = []
     @State private var isSearchingAPI = false
+    @State private var searchError: String?
+    @FocusState private var isSearchFieldFocused: Bool
     @State private var searchTask: Task<Void, Never>?
     @State private var activeTab: MarketTab = .all
     @State private var expandedMarketId: String?
 
     // MARK: - Filtered Data
 
+    /// Trending items excluding those already in watchlist
+    private var dedupedTrending: [Market] {
+        let watchIDs = Set(store.watchlist.map(\.id))
+        return store.trending.filter { !watchIDs.contains($0.id) }
+    }
+
     private var displayedMarkets: [Market] {
         let markets: [Market] = {
             switch activeTab {
-            case .all: return store.watchlist + store.trending
+            case .all: return store.watchlist + dedupedTrending
             case .trending: return store.trending
-            case .politics: return (store.watchlist + store.trending).filter { $0.category.uppercased().contains("POLITIC") }
-            case .crypto: return (store.watchlist + store.trending).filter { $0.category.uppercased().contains("CRYPTO") }
+            case .politics: return (store.watchlist + dedupedTrending).filter { $0.category.uppercased().contains("POLITIC") }
+            case .crypto: return (store.watchlist + dedupedTrending).filter { $0.category.uppercased().contains("CRYPTO") }
             case .watch: return store.watchlist
             }
         }()
@@ -100,12 +108,22 @@ struct PanelView: View {
             }
         }
         .background {
-            // ⌘Q to quit
+            // C1: Cmd+F search shortcut
+            Button("") {
+                showSearch = true
+                showSettings = false
+            }
+            .keyboardShortcut("f", modifiers: .command)
+            .frame(width: 0, height: 0)
+            .opacity(0)
+
             Button("") { NSApplication.shared.terminate(nil) }
                 .keyboardShortcut("q", modifiers: .command)
                 .frame(width: 0, height: 0)
                 .opacity(0)
         }
+        .onDisappear { searchTask?.cancel() }
+        .onChange(of: activeTab) { expandedMarketId = nil }
     }
 
     // MARK: - Market List
@@ -115,12 +133,12 @@ struct PanelView: View {
             LazyVStack(spacing: 0) {
                 if activeTab == .all {
                     if !store.watchlist.isEmpty {
-                        SectionDividerView(title: "WATCHLIST")
+                        SectionDividerView(title: L10n.s(.watchlist, settings.language))
                         marketRows(store.watchlist, startIndex: 0)
                     }
-                    if !store.trending.isEmpty {
-                        SectionDividerView(title: "TRENDING")
-                        marketRows(store.trending, startIndex: store.watchlist.count)
+                    if !dedupedTrending.isEmpty {
+                        SectionDividerView(title: L10n.s(.trending, settings.language))
+                        marketRows(dedupedTrending, startIndex: store.watchlist.count)
                     }
                 } else {
                     marketRows(displayedMarkets, startIndex: 0)
@@ -148,7 +166,10 @@ struct PanelView: View {
                             expandedMarketId = expandedMarketId == market.id ? nil : market.id
                         }
                     },
-                    onRemove: { store.removeFromWatchlist(id: market.id) }
+                    onRemove: {
+                        if expandedMarketId == market.id { expandedMarketId = nil }
+                        store.removeFromWatchlist(id: market.id)
+                    }
                 )
 
                 if expandedMarketId == market.id {
@@ -160,11 +181,12 @@ struct PanelView: View {
                                 NSWorkspace.shared.open(url)
                             }
                         },
+                        // B10: Add/remove from expanded area
                         onWatchlist: {
                             if store.isInWatchlist(market.id) {
                                 store.removeFromWatchlist(id: market.id)
                             } else {
-                                // Re-add not supported from expanded area
+                                store.addToWatchlist(market)
                             }
                         }
                     )
@@ -184,17 +206,32 @@ struct PanelView: View {
 
                 if !apiResults.isEmpty {
                     SectionDividerView(title: "POLYMARKET")
-                    ForEach(apiResults) { result in
-                        SearchResultRowView(
-                            result: result,
-                            isInWatchlist: store.isInWatchlist(result.id),
-                            onAdd: { store.addToWatchlist(result) }
+                    ForEach(Array(apiResults.enumerated()), id: \.element.id) { idx, market in
+                        MarketRowView(
+                            market: market,
+                            index: idx,
+                            isWatchlist: store.isInWatchlist(market.id),
+                            isAlternate: idx % 2 == 1,
+                            showAddButton: true,
+                            onTap: {
+                                if !store.isInWatchlist(market.id) {
+                                    store.addToWatchlist(market)
+                                }
+                            },
+                            onRemove: { store.removeFromWatchlist(id: market.id) }
                         )
                     }
                 }
 
-                if isSearchingAPI && apiResults.isEmpty {
-                    Text("SEARCHING...")
+                if let error = searchError {
+                    Text("ERR: \(error)")
+                        .font(OddsFonts.tag)
+                        .foregroundColor(OddsTheme.downRed)
+                        .tracking(1.2)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 20)
+                } else if isSearchingAPI && apiResults.isEmpty {
+                    Text(L10n.s(.searching, settings.language))
                         .font(OddsFonts.tag)
                         .foregroundColor(OddsTheme.text3)
                         .tracking(1.2)
@@ -210,7 +247,7 @@ struct PanelView: View {
     private var noResultsView: some View {
         VStack {
             Spacer()
-            Text("NO_RESULTS")
+            Text(L10n.s(.noResults, settings.language))
                 .font(OddsFonts.settingsHeader)
                 .foregroundColor(OddsTheme.text3)
                 .tracking(1.2)
@@ -219,23 +256,57 @@ struct PanelView: View {
     }
 
     private var emptyTabView: some View {
-        Text("END_OF_LIST")
-            .font(OddsFonts.tag)
-            .foregroundColor(OddsTheme.text3)
-            .tracking(1.2)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 40)
+        VStack(spacing: 8) {
+            Text(emptyTitle)
+                .font(OddsFonts.settingsHeader)
+                .foregroundColor(OddsTheme.text3)
+                .tracking(1.2)
+            if activeTab == .watch {
+                Text(emptyHint)
+                    .font(OddsFonts.footerText)
+                    .foregroundColor(OddsTheme.text3.opacity(0.6))
+                    .tracking(0.6)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+    }
+
+    private var emptyTitle: String {
+        switch activeTab {
+        case .watch: return "EMPTY_WATCHLIST"
+        case .politics: return "NO_POLITICS"
+        case .crypto: return "NO_CRYPTO"
+        default: return L10n.s(.endOfList, settings.language)
+        }
+    }
+
+    private var emptyHint: String {
+        switch settings.language {
+        case .en: return "> use search to find and add markets"
+        case .zh: return "> 使用搜索查找并添加市场"
+        case .ja: return "> 検索で市場を見つけて追加"
+        }
     }
 
     // MARK: - API Search
 
     @MainActor
     private func performAPISearch(query: String) async {
+        searchError = nil
         do {
             let results = try await PolymarketAPI.search(query: query)
-            if searchQuery == query { apiResults = results }
+            if searchQuery == query {
+                apiResults = results
+                searchError = nil
+            }
+        } catch is CancellationError {
+            // B6: Reset loading on cancel
+            if searchQuery == query { isSearchingAPI = false }
         } catch {
-            print("[odds] Search error: \(error)")
+            if searchQuery == query {
+                searchError = error.localizedDescription
+            }
         }
         if searchQuery == query { isSearchingAPI = false }
     }

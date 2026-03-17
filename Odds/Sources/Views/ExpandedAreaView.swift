@@ -5,30 +5,68 @@ struct ExpandedAreaView: View {
     let isInWatchlist: Bool
     var onOpenPoly: () -> Void
     var onWatchlist: () -> Void
+    @EnvironmentObject var settings: SettingsStore
+    @State private var showConfirm = false
+
+    private var lang: AppLanguage { settings.language }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Wide text sparkline
+            // Sparkline
             Text(wideSparkline(market.priceHistory))
                 .font(OddsFonts.sparklineExpanded)
                 .foregroundColor(OddsTheme.orange)
                 .opacity(0.85)
                 .tracking(-0.5)
 
-            // Stats — only real data
-            Text("VOL \(formatVolume(market.volume24h))  |  24H \(formatDelta(market.oneDayChange))  |  PRICE \(String(format: "%.2f", market.yesPrice))  |  OUTCOMES: YES/NO")
-                .font(OddsFonts.footerText)
-                .foregroundColor(OddsTheme.text3)
+            // Stats line
+            HStack(spacing: 0) {
+                statLabel("VOL")
+                statValue(Fmt.volume(market.volume24h))
+                statSep()
+                statLabel("24H")
+                statValue(Fmt.delta(market.oneDayChange), color: market.oneDayChange >= 0 ? OddsTheme.lime : OddsTheme.downRed)
+                statSep()
+                statLabel("PRICE")
+                statValue(String(format: "%.2f", market.yesPrice))
+            }
 
-            // Action buttons
+            // Action buttons + confirm flash
             HStack(spacing: 12) {
-                ActionButton(label: "OPEN_ON_POLY", isPrimary: true, action: onOpenPoly)
-
                 ActionButton(
-                    label: isInWatchlist ? "✓ WATCHLIST" : "+ WATCHLIST",
-                    isPrimary: false,
-                    action: onWatchlist
+                    label: L10n.s(.openOnPoly, lang),
+                    isPrimary: true,
+                    action: onOpenPoly
                 )
+
+                if showConfirm {
+                    Text("✓ ADDED")
+                        .font(OddsFonts.buttonLabel)
+                        .foregroundColor(OddsTheme.lime)
+                        .tracking(0.8)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(OddsTheme.lime.opacity(0.1))
+                        .overlay(Rectangle().stroke(OddsTheme.lime.opacity(0.3), lineWidth: 1))
+                        .transition(.opacity)
+                } else {
+                    ActionButton(
+                        label: isInWatchlist
+                            ? L10n.s(.removeWatchlist, lang)
+                            : L10n.s(.addWatchlist, lang),
+                        isPrimary: false
+                    ) {
+                        if !isInWatchlist {
+                            onWatchlist()
+                            withAnimation(.easeIn(duration: 0.15)) { showConfirm = true }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                                withAnimation(.easeOut(duration: 0.2)) { showConfirm = false }
+                            }
+                        } else {
+                            onWatchlist()
+                        }
+                    }
+                }
             }
         }
         .padding(.init(top: 8, leading: 14, bottom: 10, trailing: 12))
@@ -39,27 +77,36 @@ struct ExpandedAreaView: View {
                 .fill(OddsTheme.orange)
                 .frame(width: 2)
         }
+        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
-    private func formatDelta(_ change: Double) -> String {
-        let sign = change >= 0 ? "+" : "-"
-        return String(format: "%@.%02d", sign, abs(Int((change * 100).rounded())))
+    // MARK: - Stat Helpers
+
+    private func statLabel(_ text: String) -> some View {
+        Text(text + " ")
+            .font(OddsFonts.footerText)
+            .foregroundColor(OddsTheme.text3)
     }
 
-    private func formatVolume(_ vol: Double) -> String {
-        if vol >= 1_000_000 {
-            return String(format: "$%.1fM", vol / 1_000_000)
-        } else if vol >= 1_000 {
-            return String(format: "$%.0fK", vol / 1_000)
-        }
-        return String(format: "$%.0f", vol)
+    private func statValue(_ text: String, color: Color = OddsTheme.text2) -> some View {
+        Text(text)
+            .font(OddsFonts.footerText)
+            .foregroundColor(color)
     }
+
+    private func statSep() -> some View {
+        Text("  |  ")
+            .font(OddsFonts.footerText)
+            .foregroundColor(OddsTheme.text3.opacity(0.5))
+    }
+
+    // MARK: - Sparkline
 
     private func wideSparkline(_ data: [Double]) -> String {
-        let blocks: [Character] = ["▁", "▁", "▂", "▂", "▃", "▃", "▅", "▅", "▆", "▆", "▇", "▇", "█", "▇", "▇", "▆", "▆", "▅", "▅", "▃", "▃", "▂", "▂", "▁", "▁"]
-        guard !data.isEmpty else { return String(blocks) }
+        guard data.count >= 2 else {
+            return data.isEmpty ? "" : String(repeating: "▃", count: 25)
+        }
 
-        // Interpolate data to 25 points
         let targetLen = 25
         let bk: [Character] = ["▁", "▂", "▃", "▅", "▆", "▇", "█"]
         let minVal = data.min() ?? 0
@@ -90,20 +137,47 @@ struct ActionButton: View {
     let label: String
     let isPrimary: Bool
     var action: () -> Void
+    @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
             Text(label)
                 .font(OddsFonts.buttonLabel)
-                .foregroundColor(isPrimary ? OddsTheme.orange : OddsTheme.text2)
+                .foregroundColor(buttonForeground)
                 .tracking(0.8)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
+                .background(buttonBackground)
                 .overlay(
                     Rectangle()
-                        .stroke(isPrimary ? OddsTheme.orange : OddsTheme.border, lineWidth: 1)
+                        .stroke(buttonBorder, lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+    }
+
+    private var buttonForeground: Color {
+        if isPrimary {
+            return isHovered ? OddsTheme.bg : OddsTheme.orange
+        }
+        return isHovered ? OddsTheme.text1 : OddsTheme.text2
+    }
+
+    private var buttonBackground: Color {
+        if isPrimary && isHovered {
+            return OddsTheme.orange
+        }
+        if !isPrimary && isHovered {
+            return OddsTheme.bgElevated
+        }
+        return .clear
+    }
+
+    private var buttonBorder: Color {
+        if isPrimary {
+            return OddsTheme.orange
+        }
+        return isHovered ? OddsTheme.text3 : OddsTheme.border
     }
 }

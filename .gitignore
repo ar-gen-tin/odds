@@ -1,0 +1,50 @@
+# Build
+.build/
+*.o
+*.d
+*.swp
+DerivedData/
+
+# App bundle (built artifact)
+Odds/odds.app/
+odds.app/
+
+# macOS
+.DS_Store
+*.xcodeproj/
+*.xcworkspace/
+
+# Environment & secrets
+.env
+.env.*
+*.pem
+*.p12
+*.key
+*.mobileprovision
+
+# IDE
+.idea/
+.vscode/
+*.swiftpm/
+
+# Superset / project management
+.superset/
+
+# Design files
+*.pen
+
+# DMG artifacts
+*.dmg
+
+# Generated scripts
+Odds/generate-*.swift
+
+# Docs & design HTML (not source)
+design-*.html
+icon-exploration*.html
+logo-*.html
+variant-*.png
+
+# Assets folder (screenshots, etc)
+assets/
+docs/

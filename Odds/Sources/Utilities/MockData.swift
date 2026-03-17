@@ -10,7 +10,8 @@ enum MockData {
             yesPrice: 0.72,
             oneDayChange: 0.052,
             volume24h: 2_400_000,
-            priceHistory: [0.60, 0.62, 0.65, 0.63, 0.67, 0.70, 0.72]
+            priceHistory: [0.60, 0.62, 0.65, 0.63, 0.67, 0.70, 0.72],
+            lastUpdated: Date()
         ),
         Market(
             id: "fedcut",
@@ -20,7 +21,8 @@ enum MockData {
             yesPrice: 0.34,
             oneDayChange: -0.081,
             volume24h: 890_000,
-            priceHistory: [0.45, 0.42, 0.40, 0.38, 0.36, 0.35, 0.34]
+            priceHistory: [0.45, 0.42, 0.40, 0.38, 0.36, 0.35, 0.34],
+            lastUpdated: Date()
         ),
         Market(
             id: "gpt5",
@@ -30,7 +32,8 @@ enum MockData {
             yesPrice: 0.56,
             oneDayChange: 0.123,
             volume24h: 1_700_000,
-            priceHistory: [0.35, 0.38, 0.42, 0.45, 0.48, 0.52, 0.56]
+            priceHistory: [0.35, 0.38, 0.42, 0.45, 0.48, 0.52, 0.56],
+            lastUpdated: Date()
         ),
     ]
 
@@ -43,7 +46,8 @@ enum MockData {
             yesPrice: 0.81,
             oneDayChange: 0.024,
             volume24h: 3_100_000,
-            priceHistory: [0.72, 0.74, 0.76, 0.78, 0.79, 0.80, 0.81]
+            priceHistory: [0.72, 0.74, 0.76, 0.78, 0.79, 0.80, 0.81],
+            lastUpdated: Date()
         ),
         Market(
             id: "lakers",
@@ -53,7 +57,8 @@ enum MockData {
             yesPrice: 0.12,
             oneDayChange: -0.037,
             volume24h: 560_000,
-            priceHistory: [0.16, 0.15, 0.14, 0.13, 0.13, 0.12, 0.12]
+            priceHistory: [0.16, 0.15, 0.14, 0.13, 0.13, 0.12, 0.12],
+            lastUpdated: Date()
         ),
         Market(
             id: "recession",
@@ -63,7 +68,8 @@ enum MockData {
             yesPrice: 0.29,
             oneDayChange: 0.002,
             volume24h: 420_000,
-            priceHistory: [0.28, 0.29, 0.28, 0.29, 0.29, 0.29, 0.29]
+            priceHistory: [0.28, 0.29, 0.28, 0.29, 0.29, 0.29, 0.29],
+            lastUpdated: Date()
         ),
         Market(
             id: "chinataiwan",
@@ -73,7 +79,8 @@ enum MockData {
             yesPrice: 0.08,
             oneDayChange: -0.012,
             volume24h: 340_000,
-            priceHistory: [0.10, 0.09, 0.09, 0.08, 0.08, 0.08, 0.08]
+            priceHistory: [0.10, 0.09, 0.09, 0.08, 0.08, 0.08, 0.08],
+            lastUpdated: Date()
         ),
     ]
 }

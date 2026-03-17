@@ -43,13 +43,13 @@ enum OddsFonts {
     // Tag — 10pt
     static let tag = Font.custom(regular, size: 10)
 
-    // Footer — 9pt / 8pt
+    // C4: Footer minimum 9pt (was 8pt)
     static let footerText = Font.custom(regular, size: 9)
-    static let footerSmall = Font.custom(regular, size: 8)
+    static let footerSmall = Font.custom(regular, size: 9)
 
     // Sparklines
     static let sparkline = Font.custom(regular, size: 10)
-    static let sparklineSmall = Font.custom(regular, size: 8)
+    static let sparklineSmall = Font.custom(regular, size: 9)
     static let sparklineExpanded = Font.custom(regular, size: 9)
 
     // Medium weight labels

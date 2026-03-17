@@ -1,22 +1,26 @@
 import SwiftUI
 
 struct ColumnHeaderView: View {
+    @EnvironmentObject var settings: SettingsStore
+
     var body: some View {
         HStack(spacing: 0) {
-            Text("IDX")
+            Text(L10n.s(.idx, settings.language))
                 .frame(width: 28, alignment: .leading)
 
-            Text("MARKET")
+            Text(L10n.s(.market, settings.language))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("PROB")
+            Text(L10n.s(.prob, settings.language))
                 .frame(width: 50, alignment: .trailing)
 
-            Text("Δ")
+            Text(L10n.s(.delta, settings.language))
                 .frame(width: 36, alignment: .trailing)
 
-            Text("TREND")
-                .frame(width: 56, alignment: .trailing)
+            if settings.showSparklines {
+                Text(L10n.s(.trend, settings.language))
+                    .frame(width: 56, alignment: .trailing)
+            }
         }
         .font(OddsFonts.colHeader)
         .foregroundColor(OddsTheme.text3)

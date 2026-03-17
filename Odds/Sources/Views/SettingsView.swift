@@ -4,34 +4,37 @@ struct SettingsView: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var store: MarketStore
     @Binding var isPresented: Bool
+    @State private var isBackHovered = false
+
+    private var lang: AppLanguage { settings.language }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Back navigation
             Button {
                 isPresented = false
             } label: {
                 HStack(spacing: 6) {
                     Text("←")
                         .font(OddsFonts.statusBar)
-                        .foregroundColor(OddsTheme.text2)
-                    Text("BACK_TO_FEED")
+                        .foregroundColor(isBackHovered ? OddsTheme.orange : OddsTheme.text2)
+                    Text(L10n.s(.backToFeed, lang))
                         .font(OddsFonts.statusBar)
-                        .foregroundColor(OddsTheme.text2)
+                        .foregroundColor(isBackHovered ? OddsTheme.text1 : OddsTheme.text2)
                         .tracking(0.6)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, OddsTheme.horizontalPadding)
                 .frame(height: OddsTheme.statusBarHeight)
+                .background(isBackHovered ? OddsTheme.bgElevated : Color.clear)
                 .border(width: 1, edges: [.bottom], color: OddsTheme.border)
             }
             .buttonStyle(.plain)
+            .onHover { isBackHovered = $0 }
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    // DISPLAY
-                    terminalSection(title: "DISPLAY") {
-                        terminalRow(label: "PRICE_FORMAT") {
+                    terminalSection(title: L10n.s(.display, lang)) {
+                        terminalRow(label: L10n.s(.priceFormat, lang)) {
                             bracketPicker(
                                 items: PriceFormat.allCases,
                                 selected: settings.priceFormat,
@@ -39,14 +42,14 @@ struct SettingsView: View {
                             ) { settings.priceFormat = $0 }
                         }
 
-                        terminalRow(label: "SPARKLINES") {
+                        terminalRow(label: L10n.s(.sparklines, lang)) {
                             bracketToggle(
                                 onLabel: "ON", offLabel: "OFF",
                                 isOn: $settings.showSparklines
                             )
                         }
 
-                        terminalRow(label: "REFRESH_RATE") {
+                        terminalRow(label: L10n.s(.refreshRate, lang)) {
                             bracketPicker(
                                 items: [10.0, 30.0, 60.0],
                                 selected: settings.refreshInterval,
@@ -55,9 +58,8 @@ struct SettingsView: View {
                         }
                     }
 
-                    // LANGUAGE
-                    terminalSection(title: "LANGUAGE") {
-                        terminalRow(label: "LOCALE") {
+                    terminalSection(title: L10n.s(.language, lang)) {
+                        terminalRow(label: L10n.s(.locale, lang)) {
                             bracketPicker(
                                 items: AppLanguage.allCases,
                                 selected: settings.language,
@@ -66,41 +68,39 @@ struct SettingsView: View {
                         }
                     }
 
-                    // DATA
-                    terminalSection(title: "DATA") {
-                        terminalInfoRow(label: "SOURCE", value: "POLYMARKET")
-                        terminalInfoRow(label: "STATUS", value: "CONNECTED", valueColor: OddsTheme.lime)
-                        terminalInfoRow(label: "LAST_SYNC", value: formatLastSync())
+                    terminalSection(title: L10n.s(.data, lang)) {
+                        terminalInfoRow(label: L10n.s(.source, lang), value: "POLYMARKET")
+                        if store.error != nil {
+                            terminalInfoRow(label: L10n.s(.status, lang), value: "OFFLINE", valueColor: OddsTheme.downRed)
+                        } else if store.isLive {
+                            terminalInfoRow(label: L10n.s(.status, lang), value: L10n.s(.connected, lang), valueColor: OddsTheme.lime)
+                        } else {
+                            terminalInfoRow(label: L10n.s(.status, lang), value: "...", valueColor: OddsTheme.text3)
+                        }
+                        terminalInfoRow(label: L10n.s(.lastSync, lang), value: formatLastSync())
                     }
 
-                    // SYSTEM
-                    terminalSection(title: "SYSTEM") {
-                        terminalInfoRow(label: "VERSION", value: "0.1.0")
+                    terminalSection(title: L10n.s(.system, lang)) {
+                        terminalInfoRow(label: L10n.s(.version, lang), value: OddsTheme.appVersion)
+                    }
 
-                        terminalRow(label: "LAUNCH_LOGIN") {
-                            bracketToggle(
-                                onLabel: "ON", offLabel: "OFF",
-                                isOn: $settings.launchAtLogin
-                            )
+                    // A8: launchAtLogin removed (not implemented)
+
+                    terminalSection(title: L10n.s(.shortcuts, lang)) {
+                        terminalInfoRow(label: L10n.s(.quit, lang), value: "⌘Q")
+                        terminalInfoRow(label: L10n.s(.search, lang), value: "⌕")
+                        terminalInfoRow(label: L10n.s(.close, lang), value: "ESC")
+                        terminalInfoRow(label: L10n.s(.expand, lang), value: "click")
+                    }
+
+                    HStack(spacing: 12) {
+                        ActionButton(label: L10n.s(.resetSetup, lang), isPrimary: false) {
+                            settings.hasCompletedOnboarding = false
+                        }
+                        ActionButton(label: L10n.s(.quitOdds, lang), isPrimary: true) {
+                            NSApplication.shared.terminate(nil)
                         }
                     }
-
-                    // Quit button
-                    Button {
-                        NSApplication.shared.terminate(nil)
-                    } label: {
-                        Text("QUIT_ODDS")
-                            .font(OddsFonts.settingsValue)
-                            .foregroundColor(OddsTheme.orange)
-                            .tracking(0.8)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .overlay(
-                                Rectangle()
-                                    .stroke(OddsTheme.orange, lineWidth: 1)
-                            )
-                    }
-                    .buttonStyle(.plain)
                     .padding(.horizontal, OddsTheme.horizontalPadding)
                     .padding(.vertical, 16)
                 }
@@ -109,7 +109,7 @@ struct SettingsView: View {
         .background(OddsTheme.bg)
     }
 
-    // MARK: - Terminal-style Components
+    // MARK: - Components
 
     @ViewBuilder
     private func terminalSection(title: String, @ViewBuilder content: () -> some View) -> some View {
@@ -119,7 +119,6 @@ struct SettingsView: View {
                 .foregroundColor(OddsTheme.orange)
                 .tracking(1.5)
                 .padding(.bottom, 8)
-
             content()
         }
         .padding(.horizontal, OddsTheme.horizontalPadding)
@@ -162,16 +161,13 @@ struct SettingsView: View {
     }
 
     private func bracketPicker<T: Hashable>(
-        items: [T],
-        selected: T,
+        items: [T], selected: T,
         label: @escaping (T) -> String,
         onSelect: @escaping (T) -> Void
     ) -> some View {
         HStack(spacing: 4) {
             ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                Button {
-                    onSelect(item)
-                } label: {
+                Button { onSelect(item) } label: {
                     Text("[\(label(item))]")
                         .font(OddsFonts.settingsValue)
                         .foregroundColor(selected == item ? OddsTheme.text1 : OddsTheme.text3)
@@ -183,30 +179,23 @@ struct SettingsView: View {
 
     private func bracketToggle(onLabel: String, offLabel: String, isOn: Binding<Bool>) -> some View {
         HStack(spacing: 4) {
-            Button {
-                isOn.wrappedValue = true
-            } label: {
+            Button { isOn.wrappedValue = true } label: {
                 Text("[\(onLabel)]")
                     .font(OddsFonts.settingsValue)
                     .foregroundColor(isOn.wrappedValue ? OddsTheme.text1 : OddsTheme.text3)
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                isOn.wrappedValue = false
-            } label: {
+            }.buttonStyle(.plain)
+            Button { isOn.wrappedValue = false } label: {
                 Text("[\(offLabel)]")
                     .font(OddsFonts.settingsValue)
                     .foregroundColor(!isOn.wrappedValue ? OddsTheme.text1 : OddsTheme.text3)
-            }
-            .buttonStyle(.plain)
+            }.buttonStyle(.plain)
         }
     }
 
     private func formatLastSync() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter.string(from: store.lastUpdated) + " UTC"
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm:ss"
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f.string(from: store.lastUpdated) + " UTC"
     }
 }

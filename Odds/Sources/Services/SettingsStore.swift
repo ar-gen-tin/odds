@@ -52,9 +52,6 @@ final class SettingsStore: ObservableObject {
     @Published var showSparklines: Bool {
         didSet { UserDefaults.standard.set(showSparklines, forKey: "showSparklines") }
     }
-    @Published var launchAtLogin: Bool {
-        didSet { UserDefaults.standard.set(launchAtLogin, forKey: "launchAtLogin") }
-    }
     @Published var hasCompletedOnboarding: Bool {
         didSet { UserDefaults.standard.set(hasCompletedOnboarding, forKey: "hasCompletedOnboarding") }
     }
@@ -66,7 +63,6 @@ final class SettingsStore: ObservableObject {
         let interval = defaults.double(forKey: "refreshInterval")
         self.refreshInterval = interval > 0 ? interval : 30
         self.showSparklines = defaults.object(forKey: "showSparklines") as? Bool ?? true
-        self.launchAtLogin = defaults.bool(forKey: "launchAtLogin")
         self.hasCompletedOnboarding = defaults.bool(forKey: "hasCompletedOnboarding")
     }
 

@@ -6,6 +6,7 @@ struct MarketRowView: View {
     let isWatchlist: Bool
     let isAlternate: Bool
     var isExpanded: Bool = false
+    var showAddButton: Bool = false
     var onTap: (() -> Void)?
     var onRemove: (() -> Void)?
 
@@ -18,6 +19,7 @@ struct MarketRowView: View {
         isWatchlist: Bool = false,
         isAlternate: Bool = false,
         isExpanded: Bool = false,
+        showAddButton: Bool = false,
         onTap: (() -> Void)? = nil,
         onRemove: (() -> Void)? = nil
     ) {
@@ -26,6 +28,7 @@ struct MarketRowView: View {
         self.isWatchlist = isWatchlist
         self.isAlternate = isAlternate
         self.isExpanded = isExpanded
+        self.showAddButton = showAddButton
         self.onTap = onTap
         self.onRemove = onRemove
     }
@@ -36,7 +39,7 @@ struct MarketRowView: View {
                 // IDX column (28px)
                 Text(String(format: "%02d", index))
                     .font(OddsFonts.tag)
-                    .foregroundColor(OddsTheme.text3)
+                    .foregroundColor(isExpanded ? OddsTheme.orange : OddsTheme.text3)
                     .frame(width: 28, alignment: .leading)
 
                 // MARKET column (flex) — name + dot leader
@@ -44,7 +47,7 @@ struct MarketRowView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 // PROB column (50px)
-                Text(formatProb(market.yesPrice))
+                Text(settings.formatPrice(market.yesPrice))
                     .font(OddsFonts.price)
                     .foregroundColor(OddsTheme.text1)
                     .frame(width: 50, alignment: .trailing)
@@ -55,19 +58,36 @@ struct MarketRowView: View {
                     .foregroundColor(trendColor)
                     .frame(width: 36, alignment: .trailing)
 
-                // TREND column (56px) — text-based sparkline
-                Text(MarketRowView.textSparkline(market.priceHistory))
-                    .font(OddsFonts.sparklineSmall)
-                    .foregroundColor(OddsTheme.orange)
-                    .opacity(0.7)
-                    .tracking(-0.5)
-                    .frame(width: 56, alignment: .trailing)
+                // TREND / ADD column (56px)
+                if showAddButton {
+                    addButtonView
+                } else if settings.showSparklines {
+                    Text(MarketRowView.textSparkline(market.priceHistory))
+                        .font(OddsFonts.sparklineSmall)
+                        .foregroundColor(OddsTheme.orange)
+                        .opacity(0.7)
+                        .tracking(-0.5)
+                        .frame(width: 56, alignment: .trailing)
+                } else {
+                    Spacer().frame(width: 56)
+                }
             }
             .padding(.horizontal, OddsTheme.horizontalPadding)
             .frame(height: OddsTheme.rowHeight)
             .background(rowBackground)
-            .border(width: 1, edges: [.bottom], color: OddsTheme.border)
-            .onHover { isHovered = $0 }
+            .border(width: 1, edges: [.bottom], color: isExpanded ? OddsTheme.orange.opacity(0.3) : OddsTheme.border)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(market.question), \(settings.formatPrice(market.yesPrice)), \(market.changeText)")
+            .onHover { hovering in
+                withAnimation(.easeOut(duration: 0.12)) {
+                    isHovered = hovering
+                }
+                if hovering && onTap != nil {
+                    NSCursor.pointingHand.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
             .onTapGesture {
                 onTap?()
             }
@@ -77,7 +97,7 @@ struct MarketRowView: View {
                         NSWorkspace.shared.open(url)
                     }
                 } label: {
-                    Label("Open on Polymarket", systemImage: "arrow.up.right")
+                    Label(L10n.s(.openPolymarket, settings.language), systemImage: "arrow.up.right")
                 }
 
                 Button {
@@ -86,7 +106,7 @@ struct MarketRowView: View {
                         NSPasteboard.general.setString(url.absoluteString, forType: .string)
                     }
                 } label: {
-                    Label("Copy Link", systemImage: "doc.on.doc")
+                    Label(L10n.s(.copyLink, settings.language), systemImage: "doc.on.doc")
                 }
 
                 if isWatchlist {
@@ -94,7 +114,7 @@ struct MarketRowView: View {
                     Button(role: .destructive) {
                         onRemove?()
                     } label: {
-                        Label("Remove from Watchlist", systemImage: "xmark")
+                        Label(L10n.s(.removeFromWatchlist, settings.language), systemImage: "xmark")
                     }
                 }
             }
@@ -116,36 +136,67 @@ struct MarketRowView: View {
                         x += 5
                     }
                 }
-                .stroke(OddsTheme.text3, lineWidth: 0.5)
+                .stroke(OddsTheme.text3.opacity(isHovered ? 0.6 : 0.35), lineWidth: 0.5)
             }
 
             // Layer 2: name text with opaque background to mask dots behind it
             Text(market.question)
                 .font(OddsFonts.marketName)
-                .foregroundColor(OddsTheme.text1)
+                .foregroundColor(isHovered ? OddsTheme.text1 : OddsTheme.text1.opacity(0.85))
                 .lineLimit(1)
                 .help(market.question)
                 .padding(.trailing, 4)
-                .background(isAlternate || isHovered ? OddsTheme.bgElevated : OddsTheme.bg)
+                .background(isAlternate || isHovered || isExpanded ? OddsTheme.bgElevated : OddsTheme.bg)
         }
     }
 
     private var rowBackground: Color {
+        if isExpanded { return OddsTheme.bgElevated }
         if isHovered { return OddsTheme.bgElevated }
         if isAlternate { return OddsTheme.bgElevated }
         return Color.clear
     }
 
+    // MARK: - Add Button (search results)
+
+    @State private var isAddHovered = false
+    @State private var justAdded = false
+
+    private var addButtonView: some View {
+        Button {
+            if !isWatchlist && !justAdded {
+                onTap?()
+                withAnimation(.easeIn(duration: 0.15)) { justAdded = true }
+            }
+        } label: {
+            if isWatchlist || justAdded {
+                Text("✓")
+                    .font(OddsFonts.buttonLabel)
+                    .foregroundColor(justAdded ? OddsTheme.lime : OddsTheme.lime.opacity(0.6))
+                    .frame(width: 56, height: 22)
+                    .background(OddsTheme.lime.opacity(justAdded ? 0.12 : 0.04))
+                    .overlay(Rectangle().stroke(OddsTheme.lime.opacity(justAdded ? 0.4 : 0.15), lineWidth: 1))
+            } else {
+                Text("+ ADD")
+                    .font(OddsFonts.buttonLabel)
+                    .foregroundColor(isAddHovered ? OddsTheme.lime : OddsTheme.lime.opacity(0.8))
+                    .tracking(0.6)
+                    .frame(width: 56, height: 22)
+                    .background(OddsTheme.lime.opacity(isAddHovered ? 0.12 : 0.06))
+                    .overlay(Rectangle().stroke(OddsTheme.lime.opacity(isAddHovered ? 0.5 : 0.25), lineWidth: 1))
+            }
+        }
+        .buttonStyle(.plain)
+        .onHover { isAddHovered = $0 }
+    }
+
+    // A7: Use downRed instead of orange for down trend
     private var trendColor: Color {
         switch market.trend {
         case .up: return OddsTheme.lime
-        case .down: return OddsTheme.orange
+        case .down: return OddsTheme.downRed
         case .flat: return OddsTheme.text3
         }
-    }
-
-    private func formatProb(_ price: Double) -> String {
-        String(format: ".%02d", Int((price * 100).rounded()))
     }
 
     private func formatDelta(_ change: Double) -> String {

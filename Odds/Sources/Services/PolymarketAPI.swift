@@ -1,81 +1,112 @@
 import Foundation
 
+/// Frozen contract: all API calls return [Market]
 enum PolymarketAPI {
     static let baseURL = "https://gamma-api.polymarket.com"
 
-    static func search(query: String, limit: Int = 10) async throws -> [SearchResult] {
+    // 10s timeout
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 15
+        return URLSession(configuration: config)
+    }()
+
+    // MARK: - Fetch Trending (real data)
+
+    static func fetchTrending(limit: Int = 20) async throws -> [Market] {
+        let urlString = "\(baseURL)/events?limit=\(limit)&active=true&closed=false&order=volume24hr&ascending=false"
+        guard let url = URL(string: urlString) else { throw APIError.invalidURL }
+
+        let (data, response) = try await session.data(from: url)
+        try validateResponse(response)
+
+        let events = try parseEvents(data)
+        return events.compactMap { eventToMarket($0) }
+    }
+
+    // MARK: - Search
+
+    static func search(query: String, limit: Int = 10) async throws -> [Market] {
         guard !query.isEmpty else { return [] }
 
         let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
         let urlString = "\(baseURL)/public-search?q=\(encoded)&limit_per_type=\(limit)"
+        guard let url = URL(string: urlString) else { throw APIError.invalidURL }
 
-        guard let url = URL(string: urlString) else {
-            print("[odds] Invalid URL: \(urlString)")
-            return []
-        }
+        let (data, response) = try await session.data(from: url)
+        try validateResponse(response)
 
-        print("[odds] Searching: \(urlString)")
-
-        let (data, response) = try await URLSession.shared.data(from: url)
-
-        if let httpResponse = response as? HTTPURLResponse {
-            print("[odds] HTTP \(httpResponse.statusCode), body size: \(data.count) bytes")
-        }
-
-        // The API returns events at top level, parse flexibly
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        guard let eventsArray = json?["events"] as? [[String: Any]] else {
-            print("[odds] No 'events' key in response")
-            return []
-        }
+        guard let eventsArray = json?["events"] as? [[String: Any]] else { return [] }
 
-        print("[odds] Found \(eventsArray.count) events")
-
-        return eventsArray.compactMap { parseEvent($0) }
+        return eventsArray.compactMap { parseEventDict($0) }
     }
 
-    private static func parseEvent(_ dict: [String: Any]) -> SearchResult? {
-        guard let id = dict["id"] as? String ?? (dict["id"] as? Int).map(String.init),
-              let title = dict["title"] as? String,
-              let slug = dict["slug"] as? String else {
-            return nil
+    // MARK: - Parsing
+
+    private static func parseEvents(_ data: Data) throws -> [[String: Any]] {
+        guard let array = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+            throw APIError.parseError
         }
+        return array
+    }
 
-        let volume = dict["volume"] as? Double ?? 0
+    private static func eventToMarket(_ event: [String: Any]) -> Market? {
+        guard let title = event["title"] as? String,
+              let slug = event["slug"] as? String else { return nil }
 
-        // Parse markets array
-        let marketsArray = dict["markets"] as? [[String: Any]] ?? []
-        let markets = marketsArray.compactMap { parseMarket($0) }
+        let id = stringID(event["id"])
+        let volume24hr = event["volume24hr"] as? Double ?? 0
+        let markets = event["markets"] as? [[String: Any]] ?? []
 
-        // Get category from first market's groupItemTitle or tag
-        let category = (marketsArray.first?["groupItemTitle"] as? String) ?? ""
+        // Take the first market's price data
+        guard let first = markets.first else { return nil }
+        let outcomePrices = parseOutcomePrices(first["outcomePrices"] as? String)
+        let yesPrice = outcomePrices.first ?? 0
 
-        return SearchResult(
-            id: "\(id)",
-            title: title,
+        // Skip resolved/zero markets
+        guard yesPrice > 0.01 && yesPrice < 0.99 else { return nil }
+
+        let change = first["oneDayPriceChange"] as? Double ?? 0
+        let category = (first["groupItemTitle"] as? String) ?? guessCategory(title)
+
+        return Market(
+            id: id,
+            question: String(title.prefix(50)),
+            category: category.uppercased(),
             slug: slug,
-            category: category,
-            volume: volume,
-            markets: markets
+            yesPrice: yesPrice,
+            oneDayChange: change,
+            volume24h: volume24hr,
+            priceHistory: [yesPrice],
+            lastUpdated: Date()
         )
     }
 
-    private static func parseMarket(_ dict: [String: Any]) -> SearchResult.MarketInfo? {
-        guard let id = dict["id"] as? String ?? (dict["id"] as? Int).map(String.init) else {
-            return nil
-        }
+    private static func parseEventDict(_ dict: [String: Any]) -> Market? {
+        guard let title = dict["title"] as? String,
+              let slug = dict["slug"] as? String else { return nil }
 
-        let question = dict["question"] as? String ?? ""
-        let slug = dict["slug"] as? String ?? ""
-        let outcomePrices = parseOutcomePrices(dict["outcomePrices"] as? String)
-        let change = dict["oneDayPriceChange"] as? Double
+        let id = stringID(dict["id"])
+        let volume = dict["volume"] as? Double ?? 0
+        let markets = dict["markets"] as? [[String: Any]] ?? []
+        let first = markets.first
+        let outcomePrices = parseOutcomePrices(first?["outcomePrices"] as? String)
+        let yesPrice = outcomePrices.first ?? 0
+        let change = first?["oneDayPriceChange"] as? Double ?? 0
+        let category = (first?["groupItemTitle"] as? String) ?? ""
 
-        return SearchResult.MarketInfo(
-            id: "\(id)",
-            question: question,
+        return Market(
+            id: id,
+            question: String(title.prefix(50)),
+            category: category.isEmpty ? guessCategory(title) : category.uppercased(),
             slug: slug,
-            outcomePrices: outcomePrices,
-            oneDayPriceChange: change
+            yesPrice: yesPrice,
+            oneDayChange: change,
+            volume24h: volume,
+            priceHistory: [yesPrice],
+            lastUpdated: Date()
         )
     }
 
@@ -87,29 +118,45 @@ enum PolymarketAPI {
             .replacingOccurrences(of: "\"", with: "")
         return cleaned.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
     }
-}
 
-// MARK: - Search Result
-
-struct SearchResult: Identifiable {
-    let id: String
-    let title: String
-    let slug: String
-    let category: String
-    let volume: Double
-    let markets: [MarketInfo]
-
-    struct MarketInfo: Identifiable {
-        let id: String
-        let question: String
-        let slug: String
-        let outcomePrices: [Double]
-        let oneDayPriceChange: Double?
-
-        var yesPrice: Double { outcomePrices.first ?? 0 }
+    private static func stringID(_ value: Any?) -> String {
+        if let s = value as? String { return s }
+        if let i = value as? Int { return String(i) }
+        if let d = value as? Double { return String(Int(d)) }
+        return UUID().uuidString
     }
 
-    var polymarketURL: URL? {
-        URL(string: "https://polymarket.com/event/\(slug)")
+    private static func guessCategory(_ title: String) -> String {
+        let t = title.lowercased()
+        if t.contains("bitcoin") || t.contains("crypto") || t.contains("ethereum") || t.contains("btc") { return "CRYPTO" }
+        if t.contains("trump") || t.contains("president") || t.contains("election") || t.contains("democrat") || t.contains("republican") { return "POLITICS" }
+        if t.contains("fed") || t.contains("rate") || t.contains("recession") || t.contains("gdp") || t.contains("tariff") { return "ECONOMY" }
+        if t.contains("nba") || t.contains("nfl") || t.contains("fifa") || t.contains("champion") { return "SPORTS" }
+        if t.contains("gpt") || t.contains("openai") || t.contains("ai ") { return "AI" }
+        return "MARKETS"
+    }
+
+    private static func validateResponse(_ response: URLResponse) throws {
+        guard let http = response as? HTTPURLResponse else { throw APIError.networkError }
+        guard (200...299).contains(http.statusCode) else { throw APIError.httpError(http.statusCode) }
     }
 }
+
+// MARK: - Error Types
+
+enum APIError: LocalizedError {
+    case invalidURL
+    case networkError
+    case httpError(Int)
+    case parseError
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL: return "Invalid URL"
+        case .networkError: return "Network error"
+        case .httpError(let code): return "HTTP \(code)"
+        case .parseError: return "Parse error"
+        }
+    }
+}
+

@@ -93,13 +93,9 @@ struct OnboardingView: View {
 
                 // Action buttons
                 if showActions {
-                    HStack(spacing: 12) {
-                        ActionButton(label: "ADD_MARKETS", isPrimary: true) {
-                            onComplete()
-                        }
-                        ActionButton(label: "IMPORT_LIST", isPrimary: false) {
-                            onComplete()
-                        }
+                    // C3: Single action button (IMPORT removed — not implemented)
+                    ActionButton(label: L10n.s(.addMarkets, settings.language), isPrimary: true) {
+                        onComplete()
                     }
                     .transition(.opacity)
                 }
@@ -110,7 +106,7 @@ struct OnboardingView: View {
 
             // Footer
             HStack {
-                Text("odds v0.1.0  |  onlymarket.com")
+                Text("odds v\(OddsTheme.appVersion)  |  onlymarket.com")
                     .font(OddsFonts.footerText)
                     .foregroundColor(OddsTheme.text3)
                     .tracking(0.6)

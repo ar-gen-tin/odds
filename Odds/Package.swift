@@ -9,7 +9,8 @@ let package = Package(
             name: "Odds",
             path: "Sources",
             resources: [
-                .copy("Resources/Fonts")
+                .copy("Resources/Fonts"),
+                .copy("Resources/MenuBarIcon")
             ]
         )
     ]

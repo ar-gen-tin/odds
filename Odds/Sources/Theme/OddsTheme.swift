@@ -33,6 +33,9 @@ enum OddsTheme {
     static let categoryHeight: CGFloat = 24
     static let footerHeight: CGFloat = 24
     static let horizontalPadding: CGFloat = 12
+
+    // App metadata
+    static let appVersion = "0.1.0"
 }
 
 extension Color {
