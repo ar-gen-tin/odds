@@ -9,6 +9,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.1-brightgreen)](https://github.com/ar-gen-tin/odds/releases)
 
+![odds screenshot](docs/images/screenshot-main.png)
+
 </div>
 
 ---
@@ -49,6 +51,8 @@ Real-time prediction market data with probability, daily change, and trend spark
 | POLITICS | Political events |
 | CRYPTO | Cryptocurrency markets |
 | WATCH | Your saved markets |
+
+![odds implementation](docs/images/screenshot-implementation.png)
 
 ### Search & Add
 
@@ -95,6 +99,8 @@ Boot-sequence animation with terminal-style progress:
 > FEED_SUBSCRIBE......PENDING
 > MARKETS_LOADED......0
 ```
+
+![odds features](docs/images/screenshot-features.png)
 
 ---
 

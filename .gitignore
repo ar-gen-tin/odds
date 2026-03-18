@@ -47,4 +47,5 @@ variant-*.png
 
 # Assets folder (screenshots, etc)
 assets/
-docs/
+docs/*
+!docs/images/
