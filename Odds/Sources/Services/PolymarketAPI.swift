@@ -22,7 +22,7 @@ enum PolymarketAPI {
         try validateResponse(response)
 
         let events = try parseEvents(data)
-        return events.compactMap { eventToMarket($0) }
+        return events.compactMap { parseEvent($0, filterPrice: true) }
     }
 
     // MARK: - Search
@@ -40,7 +40,7 @@ enum PolymarketAPI {
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         guard let eventsArray = json?["events"] as? [[String: Any]] else { return [] }
 
-        return eventsArray.compactMap { parseEventDict($0) }
+        return eventsArray.compactMap { parseEvent($0) }
     }
 
     // MARK: - Parsing
@@ -52,55 +52,31 @@ enum PolymarketAPI {
         return array
     }
 
-    private static func eventToMarket(_ event: [String: Any]) -> Market? {
-        guard let title = event["title"] as? String,
-              let slug = event["slug"] as? String else { return nil }
-
-        let id = stringID(event["id"])
-        let volume24hr = event["volume24hr"] as? Double ?? 0
-        let markets = event["markets"] as? [[String: Any]] ?? []
-
-        // Take the first market's price data
-        guard let first = markets.first else { return nil }
-        let outcomePrices = parseOutcomePrices(first["outcomePrices"] as? String)
-        let yesPrice = outcomePrices.first ?? 0
-
-        // Skip resolved/zero markets
-        guard yesPrice > 0.01 && yesPrice < 0.99 else { return nil }
-
-        let change = first["oneDayPriceChange"] as? Double ?? 0
-        let category = (first["groupItemTitle"] as? String) ?? guessCategory(title)
-
-        return Market(
-            id: id,
-            question: String(title.prefix(50)),
-            category: category.uppercased(),
-            slug: slug,
-            yesPrice: yesPrice,
-            oneDayChange: change,
-            volume24h: volume24hr,
-            priceHistory: [yesPrice],
-            lastUpdated: Date()
-        )
-    }
-
-    private static func parseEventDict(_ dict: [String: Any]) -> Market? {
+    /// Unified event parser for both trending and search results
+    private static func parseEvent(_ dict: [String: Any], filterPrice: Bool = false) -> Market? {
         guard let title = dict["title"] as? String,
               let slug = dict["slug"] as? String else { return nil }
 
         let id = stringID(dict["id"])
-        let volume = dict["volume"] as? Double ?? 0
+        let volume = dict["volume24hr"] as? Double ?? dict["volume"] as? Double ?? 0
         let markets = dict["markets"] as? [[String: Any]] ?? []
+
         let first = markets.first
         let outcomePrices = parseOutcomePrices(first?["outcomePrices"] as? String)
         let yesPrice = outcomePrices.first ?? 0
+
+        if filterPrice {
+            guard yesPrice > 0.01 && yesPrice < 0.99 else { return nil }
+        }
+
         let change = first?["oneDayPriceChange"] as? Double ?? 0
-        let category = (first?["groupItemTitle"] as? String) ?? ""
+        let rawCategory = first?["groupItemTitle"] as? String
+        let category = (rawCategory?.isEmpty == false ? rawCategory!.uppercased() : nil) ?? guessCategory(title)
 
         return Market(
             id: id,
             question: String(title.prefix(50)),
-            category: category.isEmpty ? guessCategory(title) : category.uppercased(),
+            category: category,
             slug: slug,
             yesPrice: yesPrice,
             oneDayChange: change,

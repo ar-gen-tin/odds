@@ -32,7 +32,8 @@ enum LK {
     case resetSetup, quitOdds
 
     // Search
-    case searchLabel, noResults, searching, endOfList
+    case searchLabel, noResults, searching, endOfList, noData
+    case emptyWatchlist, emptyWatchlistHint, noPolitics, noCrypto
 
     // Onboarding
     case setup, predictionTracker, addMarkets
@@ -86,6 +87,11 @@ enum LK {
         case .noResults: return "NO_RESULTS"
         case .searching: return "SEARCHING..."
         case .endOfList: return "END_OF_LIST"
+        case .noData: return "NO_DATA"
+        case .emptyWatchlist: return "EMPTY_WATCHLIST"
+        case .emptyWatchlistHint: return "> use search to find and add markets"
+        case .noPolitics: return "NO_POLITICS_MARKETS"
+        case .noCrypto: return "NO_CRYPTO_MARKETS"
         case .setup: return "SETUP"
         case .predictionTracker: return "PREDICTION_MARKET_TRACKER"
         case .addMarkets: return "ADD_MARKETS"
@@ -141,6 +147,11 @@ enum LK {
         case .noResults: return "没有结果"
         case .searching: return "搜索中..."
         case .endOfList: return "没有更多"
+        case .noData: return "暂无数据"
+        case .emptyWatchlist: return "关注列表为空"
+        case .emptyWatchlistHint: return "> 使用搜索查找并添加市场"
+        case .noPolitics: return "暂无政治市场"
+        case .noCrypto: return "暂无加密市场"
         case .setup: return "初始化"
         case .predictionTracker: return "预测市场追踪器"
         case .addMarkets: return "添加市场"
@@ -196,6 +207,11 @@ enum LK {
         case .noResults: return "結果なし"
         case .searching: return "検索中..."
         case .endOfList: return "リスト終了"
+        case .noData: return "データなし"
+        case .emptyWatchlist: return "ウォッチリストが空です"
+        case .emptyWatchlistHint: return "> 検索で市場を見つけて追加"
+        case .noPolitics: return "政治市場なし"
+        case .noCrypto: return "暗号市場なし"
         case .setup: return "セットアップ"
         case .predictionTracker: return "予測市場トラッカー"
         case .addMarkets: return "市場を追加"

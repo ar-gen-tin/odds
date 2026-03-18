@@ -12,16 +12,12 @@ enum OddsTheme {
     // Text hierarchy — cool blue-white tones
     static let text1 = Color(hex: 0xE8E8F0)
     static let text2 = Color(hex: 0x6B6B80)
-    static let text3 = Color(hex: 0x3D3D50)
+    static let text3 = Color(hex: 0x52526A)
 
     // Semantic — orange accent, aurora-lime positive, hot-pink negative
     static let orange = Color(hex: 0xFF6B2C)
     static let lime = Color(hex: 0xB8FF57)
     static let downRed = Color(hex: 0xFF3B5C)
-
-    // Dim variants for subtle backgrounds
-    static let limeDim = Color(hex: 0xB8FF57).opacity(0.06)
-    static let redDim = Color(hex: 0xFF3B5C).opacity(0.06)
 
     // Layout — matches .pen DESIGN_SPECS
     static let panelWidth: CGFloat = 380
@@ -34,8 +30,14 @@ enum OddsTheme {
     static let footerHeight: CGFloat = 24
     static let horizontalPadding: CGFloat = 12
 
+    // Column widths
+    static let colIdxWidth: CGFloat = 28
+    static let colProbWidth: CGFloat = 50
+    static let colDeltaWidth: CGFloat = 36
+    static let colTrendWidth: CGFloat = 56
+
     // App metadata
-    static let appVersion = "0.1.0"
+    static let appVersion = "1.0.1"
 }
 
 extension Color {

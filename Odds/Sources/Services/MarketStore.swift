@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 
+@MainActor
 final class MarketStore: ObservableObject {
     @Published var watchlist: [Market] = []
     @Published var trending: [Market] = []
@@ -60,7 +61,6 @@ final class MarketStore: ObservableObject {
 
     // MARK: - Fetch real data
 
-    @MainActor
     func fetchData() async {
         do {
             let markets = try await PolymarketAPI.fetchTrending(limit: 15)
@@ -106,10 +106,11 @@ final class MarketStore: ObservableObject {
 
     static let watchlistLimit = 50
 
-    func addToWatchlist(_ market: Market) {
-        guard !watchlist.contains(where: { $0.id == market.id }) else { return }
-        guard watchlist.count < Self.watchlistLimit else { return }
-        guard market.yesPrice > 0.01 && market.yesPrice < 0.99 else { return }
+    @discardableResult
+    func addToWatchlist(_ market: Market) -> Bool {
+        guard !watchlist.contains(where: { $0.id == market.id }) else { return false }
+        guard watchlist.count < Self.watchlistLimit else { return false }
+        guard market.yesPrice > 0.01 && market.yesPrice < 0.99 else { return false }
         // Rule 7: Guard NaN/Inf prices
         var safe = market
         safe.yesPrice = Fmt.safePrice(market.yesPrice)
@@ -119,6 +120,7 @@ final class MarketStore: ObservableObject {
             watchlist.append(safe)
         }
         persistWatchlist()
+        return true
     }
 
     func removeFromWatchlist(id: String) {

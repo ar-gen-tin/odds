@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FooterTickerView: View {
     @EnvironmentObject var store: MarketStore
+    @EnvironmentObject var settings: SettingsStore
     @State private var cachedTicker: String = ""
     @State private var textWidth: CGFloat = 400
     // C8: Pause when not visible
@@ -60,9 +61,11 @@ struct FooterTickerView: View {
     }
 
     private func updateTicker() {
-        let items = (store.watchlist + store.trending).prefix(8)
+        let watchIDs = Set(store.watchlist.map(\.id))
+        let deduped = store.watchlist + store.trending.filter { !watchIDs.contains($0.id) }
+        let items = deduped.prefix(8)
         guard !items.isEmpty else {
-            cachedTicker = "NO DATA"; return
+            cachedTicker = L10n.s(.noData, settings.language); return
         }
         let text = items.map { market in
             let name = Fmt.tickerName(market.question)

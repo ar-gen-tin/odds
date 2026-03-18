@@ -6,20 +6,22 @@ struct ColumnHeaderView: View {
     var body: some View {
         HStack(spacing: 0) {
             Text(L10n.s(.idx, settings.language))
-                .frame(width: 28, alignment: .leading)
+                .frame(width: OddsTheme.colIdxWidth, alignment: .leading)
 
             Text(L10n.s(.market, settings.language))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(L10n.s(.prob, settings.language))
-                .frame(width: 50, alignment: .trailing)
+                .frame(width: OddsTheme.colProbWidth, alignment: .trailing)
 
             Text(L10n.s(.delta, settings.language))
-                .frame(width: 36, alignment: .trailing)
+                .frame(width: OddsTheme.colDeltaWidth, alignment: .trailing)
 
             if settings.showSparklines {
                 Text(L10n.s(.trend, settings.language))
-                    .frame(width: 56, alignment: .trailing)
+                    .frame(width: OddsTheme.colTrendWidth, alignment: .trailing)
+            } else {
+                Spacer().frame(width: OddsTheme.colTrendWidth)
             }
         }
         .font(OddsFonts.colHeader)

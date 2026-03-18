@@ -10,7 +10,6 @@ struct PanelView: View {
     @State private var apiResults: [Market] = []
     @State private var isSearchingAPI = false
     @State private var searchError: String?
-    @FocusState private var isSearchFieldFocused: Bool
     @State private var searchTask: Task<Void, Never>?
     @State private var activeTab: MarketTab = .all
     @State private var expandedMarketId: String?
@@ -98,6 +97,7 @@ struct PanelView: View {
             } else {
                 apiResults = []
                 isSearchingAPI = false
+                searchError = nil
             }
         }
         .onExitCommand {
@@ -274,19 +274,15 @@ struct PanelView: View {
 
     private var emptyTitle: String {
         switch activeTab {
-        case .watch: return "EMPTY_WATCHLIST"
-        case .politics: return "NO_POLITICS"
-        case .crypto: return "NO_CRYPTO"
+        case .watch: return L10n.s(.emptyWatchlist, settings.language)
+        case .politics: return L10n.s(.noPolitics, settings.language)
+        case .crypto: return L10n.s(.noCrypto, settings.language)
         default: return L10n.s(.endOfList, settings.language)
         }
     }
 
     private var emptyHint: String {
-        switch settings.language {
-        case .en: return "> use search to find and add markets"
-        case .zh: return "> 使用搜索查找并添加市场"
-        case .ja: return "> 検索で市場を見つけて追加"
-        }
+        L10n.s(.emptyWatchlistHint, settings.language)
     }
 
     // MARK: - API Search

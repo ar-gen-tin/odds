@@ -192,10 +192,14 @@ struct SettingsView: View {
         }
     }
 
-    private func formatLastSync() -> String {
+    private static let syncFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "HH:mm:ss"
         f.timeZone = TimeZone(identifier: "UTC")
-        return f.string(from: store.lastUpdated) + " UTC"
+        return f
+    }()
+
+    private func formatLastSync() -> String {
+        Self.syncFormatter.string(from: store.lastUpdated) + " UTC"
     }
 }

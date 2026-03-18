@@ -65,7 +65,7 @@ private struct TypingIndicator: View {
             .frame(width: 20, alignment: .leading)
             .onAppear {
                 timer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { _ in
-                    dotCount = (dotCount + 1) % 3
+                    DispatchQueue.main.async { dotCount = (dotCount + 1) % 3 }
                 }
             }
             .onDisappear {

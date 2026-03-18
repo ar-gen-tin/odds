@@ -7,7 +7,7 @@
 [![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-black?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-F05138?logo=swift&logoColor=white)](https://swift.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-brightgreen)](https://github.com/ar-gen-tin/odds/releases)
+[![Version](https://img.shields.io/badge/version-1.0.1-brightgreen)](https://github.com/ar-gen-tin/odds/releases)
 
 </div>
 

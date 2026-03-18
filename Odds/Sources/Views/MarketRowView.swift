@@ -12,6 +12,7 @@ struct MarketRowView: View {
 
     @EnvironmentObject var settings: SettingsStore
     @State private var isHovered = false
+    @State private var didPushCursor = false
 
     init(
         market: Market,
@@ -40,7 +41,7 @@ struct MarketRowView: View {
                 Text(String(format: "%02d", index))
                     .font(OddsFonts.tag)
                     .foregroundColor(isExpanded ? OddsTheme.orange : OddsTheme.text3)
-                    .frame(width: 28, alignment: .leading)
+                    .frame(width: OddsTheme.colIdxWidth, alignment: .leading)
 
                 // MARKET column (flex) — name + dot leader
                 rowNameWithLeader
@@ -50,13 +51,13 @@ struct MarketRowView: View {
                 Text(settings.formatPrice(market.yesPrice))
                     .font(OddsFonts.price)
                     .foregroundColor(OddsTheme.text1)
-                    .frame(width: 50, alignment: .trailing)
+                    .frame(width: OddsTheme.colProbWidth, alignment: .trailing)
 
                 // Δ column (36px)
-                Text(formatDelta(market.oneDayChange))
+                Text(Fmt.delta(market.oneDayChange))
                     .font(OddsFonts.change)
                     .foregroundColor(trendColor)
-                    .frame(width: 36, alignment: .trailing)
+                    .frame(width: OddsTheme.colDeltaWidth, alignment: .trailing)
 
                 // TREND / ADD column (56px)
                 if showAddButton {
@@ -67,9 +68,9 @@ struct MarketRowView: View {
                         .foregroundColor(OddsTheme.orange)
                         .opacity(0.7)
                         .tracking(-0.5)
-                        .frame(width: 56, alignment: .trailing)
+                        .frame(width: OddsTheme.colTrendWidth, alignment: .trailing)
                 } else {
-                    Spacer().frame(width: 56)
+                    Spacer().frame(width: OddsTheme.colTrendWidth)
                 }
             }
             .padding(.horizontal, OddsTheme.horizontalPadding)
@@ -84,8 +85,10 @@ struct MarketRowView: View {
                 }
                 if hovering && onTap != nil {
                     NSCursor.pointingHand.push()
-                } else {
+                    didPushCursor = true
+                } else if didPushCursor {
                     NSCursor.pop()
+                    didPushCursor = false
                 }
             }
             .onTapGesture {
@@ -160,28 +163,26 @@ struct MarketRowView: View {
     // MARK: - Add Button (search results)
 
     @State private var isAddHovered = false
-    @State private var justAdded = false
 
     private var addButtonView: some View {
         Button {
-            if !isWatchlist && !justAdded {
+            if !isWatchlist {
                 onTap?()
-                withAnimation(.easeIn(duration: 0.15)) { justAdded = true }
             }
         } label: {
-            if isWatchlist || justAdded {
+            if isWatchlist {
                 Text("✓")
                     .font(OddsFonts.buttonLabel)
-                    .foregroundColor(justAdded ? OddsTheme.lime : OddsTheme.lime.opacity(0.6))
-                    .frame(width: 56, height: 22)
-                    .background(OddsTheme.lime.opacity(justAdded ? 0.12 : 0.04))
-                    .overlay(Rectangle().stroke(OddsTheme.lime.opacity(justAdded ? 0.4 : 0.15), lineWidth: 1))
+                    .foregroundColor(OddsTheme.lime.opacity(0.6))
+                    .frame(width: OddsTheme.colTrendWidth, height: 22)
+                    .background(OddsTheme.lime.opacity(0.04))
+                    .overlay(Rectangle().stroke(OddsTheme.lime.opacity(0.15), lineWidth: 1))
             } else {
                 Text("+ ADD")
                     .font(OddsFonts.buttonLabel)
                     .foregroundColor(isAddHovered ? OddsTheme.lime : OddsTheme.lime.opacity(0.8))
                     .tracking(0.6)
-                    .frame(width: 56, height: 22)
+                    .frame(width: OddsTheme.colTrendWidth, height: 22)
                     .background(OddsTheme.lime.opacity(isAddHovered ? 0.12 : 0.06))
                     .overlay(Rectangle().stroke(OddsTheme.lime.opacity(isAddHovered ? 0.5 : 0.25), lineWidth: 1))
             }
@@ -197,12 +198,6 @@ struct MarketRowView: View {
         case .down: return OddsTheme.downRed
         case .flat: return OddsTheme.text3
         }
-    }
-
-    private func formatDelta(_ change: Double) -> String {
-        if abs(change) < 0.0001 { return ".00" }
-        let sign = change > 0 ? "+" : "-"
-        return String(format: "%@.%02d", sign, abs(Int((change * 100).rounded())))
     }
 
     /// Convert price history to Unicode block characters (▁▂▃▅▆▇█)

@@ -69,7 +69,8 @@ struct ExpandedAreaView: View {
                 }
             }
         }
-        .padding(.init(top: 8, leading: 14, bottom: 10, trailing: 12))
+        .padding(.horizontal, OddsTheme.horizontalPadding)
+        .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(OddsTheme.bgCard)
         .overlay(alignment: .leading) {
