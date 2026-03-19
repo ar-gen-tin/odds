@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="#05050A"/>
+  <!-- Border glow -->
+  <rect x="4" y="4" width="504" height="504" rx="108" fill="none" stroke="#B8FF57" stroke-opacity="0.2" stroke-width="4"/>
+  <!-- Scanlines (subtle) -->
+  <defs>
+    <pattern id="scanlines" patternUnits="userSpaceOnUse" width="512" height="6">
+      <rect width="512" height="2.4" fill="#B8FF57" fill-opacity="0.015"/>
+    </pattern>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#scanlines)"/>
+  <!-- 3x3 Grid -->
+  <!-- Row 0 -->
+  <rect x="112" y="112" width="72" height="72" rx="4" fill="#B8FF57" filter="url(#glow-g)"/>
+  <rect x="220" y="112" width="72" height="72" rx="4" fill="#B8FF57" fill-opacity="0.08" stroke="#B8FF57" stroke-opacity="0.1" stroke-width="2"/>
+  <rect x="328" y="112" width="72" height="72" rx="4" fill="#FF6B2C" filter="url(#glow-o)"/>
+  <!-- Row 1 -->
+  <rect x="112" y="220" width="72" height="72" rx="4" fill="#B8FF57" fill-opacity="0.08" stroke="#B8FF57" stroke-opacity="0.1" stroke-width="2"/>
+  <rect x="220" y="220" width="72" height="72" rx="4" fill="#FF3B5C" filter="url(#glow-r)"/>
+  <rect x="328" y="220" width="72" height="72" rx="4" fill="#B8FF57" fill-opacity="0.08" stroke="#B8FF57" stroke-opacity="0.1" stroke-width="2"/>
+  <!-- Row 2 -->
+  <rect x="112" y="328" width="72" height="72" rx="4" fill="#FF6B2C" filter="url(#glow-o2)"/>
+  <rect x="220" y="328" width="72" height="72" rx="4" fill="#B8FF57" fill-opacity="0.08" stroke="#B8FF57" stroke-opacity="0.1" stroke-width="2"/>
+  <rect x="328" y="328" width="72" height="72" rx="4" fill="#B8FF57" filter="url(#glow-g2)"/>
+  <!-- Glow filters -->
+  <defs>
+    <filter id="glow-g" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="glow-o" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="glow-r" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="glow-o2" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="glow-g2" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+</svg>

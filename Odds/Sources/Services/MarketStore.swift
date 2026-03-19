@@ -17,7 +17,19 @@ final class MarketStore: ObservableObject {
     private var settingsCancellable: AnyCancellable?
     private var isBound = false
 
+    private var alertManager: AlertManager?
+
     var marketCount: Int { watchlist.count + trending.count }
+
+    /// Overall market trend for dynamic menu bar icon
+    var overallTrend: MenuBarIcon.MarketTrend {
+        let allMarkets = watchlist + trending
+        guard !allMarkets.isEmpty else { return .neutral }
+        let avgChange = allMarkets.map(\.oneDayChange).reduce(0, +) / Double(allMarkets.count)
+        if avgChange > 0.005 { return .bullish }
+        if avgChange < -0.005 { return .bearish }
+        return .neutral
+    }
 
     // MARK: - Init (load persisted data)
 
@@ -38,9 +50,10 @@ final class MarketStore: ObservableObject {
 
     // MARK: - Bind to settings (防重入)
 
-    func bind(to settings: SettingsStore) {
+    func bind(to settings: SettingsStore, alertManager: AlertManager? = nil) {
         guard !isBound else { return }
         isBound = true
+        self.alertManager = alertManager
         settingsCancellable = settings.$refreshInterval
             .removeDuplicates()
             .sink { [weak self] interval in
@@ -69,6 +82,8 @@ final class MarketStore: ObservableObject {
                 refreshWatchlistPrices(from: markets)
                 isLive = true
                 error = nil
+                // Check price alerts against latest data
+                alertManager?.checkAlerts(against: watchlist + trending)
             }
             lastUpdated = Date()
         } catch {

@@ -46,6 +46,7 @@ logo-*.html
 variant-*.png
 
 # Assets folder (screenshots, etc)
-assets/
+assets/*
+!assets/svg/
 docs/*
 !docs/images/

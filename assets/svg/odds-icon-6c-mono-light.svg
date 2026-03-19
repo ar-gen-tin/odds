@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Monochrome version for light backgrounds (black on transparent) -->
+  <!-- Row 0 -->
+  <rect x="112" y="112" width="72" height="72" rx="4" fill="black" fill-opacity="0.85"/>
+  <rect x="220" y="112" width="72" height="72" rx="4" fill="black" fill-opacity="0.15"/>
+  <rect x="328" y="112" width="72" height="72" rx="4" fill="black" fill-opacity="0.85"/>
+  <!-- Row 1 -->
+  <rect x="112" y="220" width="72" height="72" rx="4" fill="black" fill-opacity="0.15"/>
+  <rect x="220" y="220" width="72" height="72" rx="4" fill="black" fill-opacity="0.85"/>
+  <rect x="328" y="220" width="72" height="72" rx="4" fill="black" fill-opacity="0.15"/>
+  <!-- Row 2 -->
+  <rect x="112" y="328" width="72" height="72" rx="4" fill="black" fill-opacity="0.85"/>
+  <rect x="220" y="328" width="72" height="72" rx="4" fill="black" fill-opacity="0.15"/>
+  <rect x="328" y="328" width="72" height="72" rx="4" fill="black" fill-opacity="0.85"/>
+</svg>

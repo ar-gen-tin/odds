@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" width="18" height="18">
+  <!-- Menubar template icon (18x18) — use as macOS template image -->
+  <!-- Bright cells: diagonal + corners -->
+  <rect x="1.8" y="1.8" width="3.6" height="3.6" rx="0.4" fill="black" fill-opacity="0.9"/>
+  <rect x="7.2" y="1.8" width="3.6" height="3.6" rx="0.4" fill="black" fill-opacity="0.35"/>
+  <rect x="12.6" y="1.8" width="3.6" height="3.6" rx="0.4" fill="black" fill-opacity="0.9"/>
+  <rect x="1.8" y="7.2" width="3.6" height="3.6" rx="0.4" fill="black" fill-opacity="0.35"/>
+  <rect x="7.2" y="7.2" width="3.6" height="3.6" rx="0.4" fill="black" fill-opacity="0.9"/>
+  <rect x="12.6" y="7.2" width="3.6" height="3.6" rx="0.4" fill="black" fill-opacity="0.35"/>
+  <rect x="1.8" y="12.6" width="3.6" height="3.6" rx="0.4" fill="black" fill-opacity="0.9"/>
+  <rect x="7.2" y="12.6" width="3.6" height="3.6" rx="0.4" fill="black" fill-opacity="0.35"/>
+  <rect x="12.6" y="12.6" width="3.6" height="3.6" rx="0.4" fill="black" fill-opacity="0.9"/>
+</svg>

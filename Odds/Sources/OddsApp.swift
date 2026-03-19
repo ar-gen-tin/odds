@@ -4,7 +4,8 @@ import SwiftUI
 struct OddsApp: App {
     @StateObject private var marketStore = MarketStore()
     @StateObject private var settings = SettingsStore()
-    // A2: WatchlistStore removed — MarketStore is single source of truth
+    @StateObject private var alertManager = AlertManager()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
         OddsFonts.registerFonts()
@@ -23,29 +24,23 @@ struct OddsApp: App {
             }
             .environmentObject(marketStore)
             .environmentObject(settings)
-            // WatchlistStore removed — using MarketStore directly
+            .environmentObject(alertManager)
             .onAppear {
-                marketStore.bind(to: settings)
+                marketStore.bind(to: settings, alertManager: alertManager)
             }
         } label: {
-            menuBarLabel
+            Image(nsImage: MenuBarIcon.statusImage(
+                isLive: marketStore.isLive,
+                trend: marketStore.overallTrend
+            ))
         }
         .menuBarExtraStyle(.window)
     }
+}
 
-    private var menuBarLabel: some View {
-        Group {
-            if let url = Bundle.module.url(forResource: "menubar_icon", withExtension: "png", subdirectory: "MenuBarIcon"),
-               let nsImage = NSImage(contentsOf: url) {
-                let _ = {
-                    nsImage.isTemplate = true
-                    nsImage.size = NSSize(width: 18, height: 18)
-                }()
-                Image(nsImage: nsImage)
-            } else {
-                Image(systemName: "square.grid.3x3.fill")
-                    .symbolRenderingMode(.hierarchical)
-            }
-        }
+/// Hide from Dock — learned from upto's AppDelegate pattern
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
     }
 }
